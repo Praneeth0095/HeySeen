@@ -126,6 +126,8 @@ class TableRecognizer:
         labels = results["labels"]
         boxes = results["boxes"]
         
+        print(f"DEBUG: TATR Raw Detections count: {len(scores)}")
+        
         rows = []
         cols = []
         
@@ -135,8 +137,9 @@ class TableRecognizer:
             lbl = label.item()
             label_name = self.model.config.id2label[lbl]
             # logger.info(f"TATR Det: {label_name} ({score:.2f})")
+            print(f"DEBUG: TATR Det: {label_name} ({score:.2f})")
             
-            if label_name == "table row":
+            if label_name in ["table row", "table row header"]:
                 rows.append(box)
             elif label_name == "table column":
                 cols.append(box)

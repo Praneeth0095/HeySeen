@@ -136,6 +136,8 @@ class ContentExtractor:
         x0, y0, x1, y1 = block.bbox.to_pixels(image.width, image.height)
         block_image = image.crop((x0, y0, x1, y1))
         
+        print(f"DEBUG: Processing Block {block.block_id} [{block.block_type}]")
+
         content = ExtractedContent(
             block_id=block.block_id,
             block_type=block.block_type,

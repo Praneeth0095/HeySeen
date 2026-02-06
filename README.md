@@ -29,22 +29,6 @@ Apple Silicon (M2 Pro) đủ mạnh để chạy inference offline, đặc biệ
 
 ---
 
-## 🥊 HeySeen có cạnh tranh được với Mathpix không?
-
-**Có thể cạnh tranh theo hướng khác**, không phải đối đầu trực tiếp về “độ chính xác tuyệt đối”.
-
-| Tiêu chí | HeySeen (định hướng) | Mathpix | Nhận xét |
-|---|---|---|---|
-| Offline & bảo mật | ✅ | ❌ | Lợi thế rõ ràng cho nội bộ/nhạy cảm |
-| Chi phí dài hạn | ✅ (local) | ❌ (subscription) | Lợi thế nếu xử lý khối lượng lớn |
-| Độ chính xác tổng thể | ⚠️ (phụ thuộc model) | ✅ | Mathpix dẫn đầu |
-| UX hoàn chỉnh | ⚠️ (tự xây) | ✅ | Cần đầu tư UI + workflow |
-| Tùy biến pipeline | ✅ | ❌ | Lợi thế nghiên cứu nội bộ |
-
-**Kết luận thực tế**: HeySeen có thể **cạnh tranh trong phân khúc offline + privacy + bulk processing**, còn **Mathpix vẫn mạnh ở độ chính xác và trải nghiệm người dùng**.
-
----
-
 ## 🚀 Deployment (Production)
 
 HeySeen is configured to run as a persistent service on macOS.
