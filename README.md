@@ -1,4 +1,4 @@
-# 👁️ HeySeen: PDF → TeX + Images (Offline, Apple Silicon)
+# 👁️ HeySeen: PDF → TeX + Images
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
@@ -6,220 +6,146 @@
 
 > **Offline-first PDF to LaTeX converter optimized for Apple Silicon**
 
-**HeySeen** là ứng dụng chuyển đổi PDF (bài báo khoa học, sách chuyên ngành) thành **thư mục gồm file TeX và ảnh** (nếu có), chạy **hoàn toàn offline trên macOS (Apple Silicon)**. Mục tiêu là tạo pipeline tái hiện nội dung học thuật (text + math + figures) để dễ biên tập, lưu trữ và tái sử dụng—không cần API cloud, không phụ thuộc subscription.
+**HeySeen** chuyển đổi PDF (bài báo khoa học, sách chuyên ngành) thành **thư mục gồm file TeX và ảnh**, chạy **hoàn toàn offline trên macOS**. Không cần API cloud, không phụ thuộc subscription.
 
 ---
 
-## ✅ Tính khả thi
+## ✨ Tính năng
 
-**Khả thi ở mức sản phẩm offline** nếu tập trung vào các tiêu chí sau:
+- 🔒 **100% Offline**: Dữ liệu không rời khỏi máy bạn
+- 🚀 **Tối ưu Apple Silicon**: Tận dụng Metal Performance Shaders (MPS)
+- 📄 **PDF → LaTeX**: Chuyển đổi text, công thức toán, hình ảnh
+- 🎯 **Layout Analysis**: Nhận dạng cấu trúc tài liệu (multi-column, figures, tables)
+- 🧮 **Math OCR**: Nhận dạng công thức toán học → LaTeX
+- 🖼️ **Image Extraction**: Tự động trích xuất và đặt tên hình ảnh
+- 🌐 **Web Interface**: UI thân thiện để upload và xử lý PDF
+- 🔧 **CLI Tool**: Command-line interface cho batch processing
 
-- **Chấp nhận độ chính xác thực tế**: OCR math và layout vẫn có lỗi; cần cơ chế hậu kiểm.
-- **Batch + caching**: xử lý theo trang, lưu kết quả trung gian để tránh rerun.
-- **Tách nhiệm vụ**: layout → text OCR → math OCR → hình ảnh → tái dựng TeX.
+### 🎯 Use Cases
 
-Apple Silicon (M2 Pro) đủ mạnh để chạy inference offline, đặc biệt khi tối ưu **MPS** và batching.
-
-### 🎯 Use Cases (Trường hợp sử dụng)
-
-1. **Nghiên cứu sinh/học viên**: Chuyển paper PDF sang TeX để trích dẫn, chỉnh sửa công thức, hoặc tích hợp vào thesis.
-2. **Nhà xuất bản học thuật**: Batch convert sách/tài liệu cũ (scan) sang TeX để tái bản.
-3. **Thư viện/Archive**: Số hóa tài liệu riêng tư mà không upload lên cloud của bên thứ ba.
-4. **Giảng viên**: Trích xuất đề thi/bài giảng từ PDF sang LaTeX để chỉnh sửa nhanh.
+- **Nghiên cứu sinh**: Chuyển paper PDF sang TeX để trích dẫn, chỉnh sửa công thức
+- **Nhà xuất bản**: Batch convert tài liệu cũ (scan) sang TeX để tái bản
+- **Thư viện**: Số hóa tài liệu riêng tư mà không upload lên cloud
+- **Giảng viên**: Trích xuất đề thi/bài giảng từ PDF sang LaTeX
 
 ---
 
-## 🚀 Deployment (Production)
+## 🚀 Quick Start
 
-HeySeen is configured to run as a persistent service on macOS.
-
-### Quick Start
-
-Use the management scripts in the project root:
+### Cài đặt
 
 ```bash
-./start.sh     # Start all services (Backend + Cloudflare Tunnel)
-./stop.sh      # Stop all services
-./status.sh    # Check service status
-./restart.sh   # Restart all services
-```
+# 1. Clone repository
+git clone https://github.com/phucdhh/HeySeen.git
+cd HeySeen
 
-### 1. Operations
-
-**Main Management Scripts** (recommended):
-- `./start.sh` - Starts Backend API + Cloudflare Tunnel
-- `./stop.sh` - Safely stops all processes
-- `./status.sh` - View detailed service status
-- `./restart.sh` - Restart all services
-
-**Additional Scripts** in `deploy/` folder:
-- `./deploy/health_check.sh` - Extended health diagnostics
-- `./deploy/start_tunnel_bg.sh` - Restart only the Cloudflare Tunnel
-
-### 2. Monitoring
-- **Backend Log**: `server_data/server.log`
-- **Tunnel Log**: `deploy/tunnel.log`
-- **Local URL**: `http://localhost:5555`
-- **Public URL**: `https://<your-tunnel-url>.trycloudflare.com` (Check `tunnel.log` or Dashboard)
-
-### 3. Auto-start (Persistence)
-Services are configured to auto-start on login via `launchd`:
-- `~/Library/LaunchAgents/vn.edu.truyenthong.heyseen.server.plist`
-- `~/Library/LaunchAgents/vn.edu.truyenthong.heyseen.tunnel.plist`
-
-If services do not start automatically after a reboot, you can verify them:
-```bash
-launchctl list | grep heyseen
-# If missing:
-./deploy/install_autostart.sh
-```
-
----
-
-## 🎯 Mục tiêu sản phẩm
-
-- Chuyển PDF → thư mục kết quả:
-	- `main.tex` (text + math)
-	- `images/` (figure, diagram, table image)
-	- `meta.json` (mapping trang → block)
-- Chạy offline trên macOS, tối ưu MPS.
-- Có pipeline đánh giá chất lượng và log lỗi.
-
----
-
-## 🧠 Kiến trúc đề xuất
-
-1. **PDF Parsing**: tách trang, render ảnh.
-2. **Layout Analysis**: phát hiện block (text, math, figure, table).
-3. **Text OCR**: nhận dạng paragraph.
-4. **Math OCR**: nhận dạng công thức → LaTeX.
-5. **Image Extract**: cắt figure/table ra thư mục.
-6. **Reconstruction**: tạo `main.tex` theo thứ tự reading order.
-
----
-
-## 💻 Yêu cầu kỹ thuật & Cài đặt (Dev Setup)
-
-**Môi trường khuyến nghị:**
-- **Hardware**: Mac M1/M2/M3 (Pro/Max khuyến nghị cho batch size lớn), RAM ≥ 16GB.
-- **OS**: macOS Sonoma trở lên.
-- **Python**: 3.10+ (quản lý qua `venv`).
-
-**Cài đặt Dependencies:**
-Cần cài đặt `poppler` và `tesseract` để hỗ trợ xử lý PDF và OCR cơ bản.
-
-```bash
-# 1. System packages
+# 2. Cài đặt dependencies
 brew install poppler tesseract
-
-# 2. Python environment
 python3 -m venv .venv
 source .venv/bin/activate
+pip install -r requirements.txt
 
-# 3. Install PyTorch with MPS support (Nightly often has better MPS fixes)
-pip install --pre torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/nightly/cpu
+# 3. Khởi động HeySeen
+./start.sh
+```
 
-# 4. Install Core Libraries
-pip install marker-pdf surya-ocr
+Truy cập: http://localhost:5555
+
+### Sử dụng CLI
+
+```bash
+# Chuyển đổi PDF → TeX
+heyseen convert input.pdf --output output_folder
+
+# Với Math OCR
+heyseen convert paper.pdf --output result/ --math-ocr
+
+# Xem chi tiết
+heyseen convert --help
+```
+
+### Sử dụng Web Interface
+
+1. Mở trình duyệt: http://localhost:5555
+2. Upload file PDF
+3. Chọn tùy chọn (Math OCR, Layout Analysis)
+4. Nhấn "Convert"
+5. Tải về kết quả (ZIP chứa TeX + images)
+
+### Quản lý Service
+
+```bash
+./start.sh     # Khởi động HeySeen
+./stop.sh      # Dừng HeySeen
+./status.sh    # Kiểm tra trạng thái
+./restart.sh   # Khởi động lại
 ```
 
 ---
 
-## 🔧 Nguồn công nghệ tham khảo
-
-- **Marker**: https://github.com/datalab-to/marker
-- **Surya** (layout analysis)
-- **Texify** (math recognition)
-
----
-
-## 🧪 Đánh giá chất lượng
-
-- **Accuracy**: WER cho text, LaTeX match rate cho math.
-- **Layout fidelity**: độ đúng thứ tự khối nội dung.
-- **Speed**: trang/giây trên M2 Pro.
-
-### 📊 Benchmark Baseline (Dự kiến)
-
-| Model/Step | Throughput | Accuracy (Est.) | Memory |
-|---|---|---|---|
-| Surya Layout | ~2-3 pages/sec | 85-90% block detection | ~4GB |
-| Texify Math OCR | ~1-2 formulas/sec | 75-85% LaTeX match | ~3GB |
-| Text OCR (Tesseract) | ~10 pages/sec | 90-95% WER | ~1GB |
-| **Total Pipeline** | **~0.5-1 page/sec** | **Varies by document** | **~8-10GB** |
-
-*Lưu ý: Số liệu ước tính dựa trên tài liệu học thuật tiêu chuẩn (2-column, moderate math). Actual performance phụ thuộc vào độ phức tạp.*
-
----
-
-## 🚧 Hạn chế kỹ thuật (Known Limitations)
-
-1. **Chữ viết tay (Handrwriting)**: Các model hiện tại (marker/surya) chưa tối ưu tốt cho chữ viết tay so với Mathpix.
-2. **Layout phức tạp**: Sách giáo khoa có layout nhiều cột lồng nhau hoặc text bao quanh ảnh có thể bị sai thứ tự (reading order).
-3. **Tiêu tốn RAM**: Chạy model Surya/Texify song song có thể ăn >10GB RAM, cần quản lý bộ nhớ thủ công để tránh swap trên máy 16GB.
-
----
-
-## 🗺️ Lộ trình đề xuất
-
-**Phase 1 — Pipeline MVP**
-- Chạy được PDF → TeX + images với batch CLI.
-- Logging + lưu kết quả trung gian.
-
-**Phase 2 — Quality & UX**
-- Hậu kiểm (diff viewer).
-- Sửa lỗi nhanh (interactive fixes).
-
-**Phase 3 — Optimization**
-- Batching + caching + MPS tuning.
-- Plugin export (Word, Markdown).
-
----
-
-## 📂 Cấu trúc output dự kiến
+## 📂 Kết quả Output
 
 ```
 output/
-	main.tex
-	images/
-		page_01_fig_01.png
-		page_03_table_01.png
-	meta.json
+├── main.tex          # File LaTeX chính
+├── images/           # Hình ảnh được trích xuất
+│   ├── page_01_fig_01.png
+│   └── page_03_table_01.png
+└── meta.json         # Metadata (block info, bounding boxes)
+```
+
+Compile LaTeX:
+```bash
+cd output && pdflatex main.tex
 ```
 
 ---
 
-## ⚠️ Lưu ý pháp lý
+## 🎯 So sánh với Mathpix
 
-- Chỉ xử lý tài liệu hợp pháp hoặc thuộc quyền sử dụng của bạn.
-- OCR có thể sai; cần hậu kiểm nếu dùng vào xuất bản.
+| Tiêu chí | HeySeen | Mathpix |
+|----------|---------|---------|
+| **Offline & Bảo mật** | ✅ Hoàn toàn offline | ❌ Cần internet |
+| **Chi phí** | ✅ Miễn phí | ❌ $4.99+/tháng |
+| **Độ chính xác** | ⚠️ 75-90% | ✅ 90-95% |
+| **Platform** | 🍎 macOS (Apple Silicon) | 🌐 Cross-platform |
+| **Tùy biến** | ✅ Open source | ❌ Closed |
+| **Batch processing** | ✅ Unlimited | ❌ Giới hạn quota |
 
----
-
-## 🔍 FAQ & Troubleshooting
-
-**Q: Tại sao không dùng Tesseract trực tiếp?**  
-A: Tesseract yếu ở layout phức tạp và math OCR. HeySeen dùng Surya (layout) + Texify (math) cho độ chính xác cao hơn.
-
-**Q: RAM 16GB có đủ không?**  
-A: Đủ cho xử lý tuần tự (1 page/batch). Nếu muốn batch lớn (>5 pages), cần 32GB.
-
-**Q: MPS (Metal) có nhanh hơn CPU?**  
-A: Có, thường nhanh gấp 2-3 lần. Dùng `PYTORCH_ENABLE_MPS_FALLBACK=1` để tránh crash với ops không hỗ trợ.
-
-**Q: Làm sao biết pipeline đang chạy đúng?**  
-A: Kiểm tra `meta.json` output—nếu có `block_types` và `bbox`, layout analysis đã hoạt động.
+**Kết luận**: HeySeen phù hợp cho **offline + privacy + bulk processing**, Mathpix tốt hơn về **độ chính xác và UX**.
 
 ---
 
-## 📌 Trạng thái hiện tại
+## 🛠️ Production Deployment
 
-**Status**: 🟡 In Development (Phase 0 - Planning)
+### Auto-start Services
 
-- [x] Nghiên cứu công nghệ (Marker, Surya, Texify)
-- [x] Định hình kiến trúc pipeline
-- [ ] Implementation Phase 1 (xem [PLAN.md](PLAN.md))
-- [ ] Benchmark trên M2 Pro với test dataset
+HeySeen tự động khởi động khi login (via `launchd`):
+
+```bash
+# Cài đặt auto-start
+./deploy/install_autostart.sh
+
+# Kiểm tra
+launchctl list | grep heyseen
+```
+
+### Monitoring
+
+- **Backend Log**: `tail -f server_data/server.log`
+- **Local URL**: http://localhost:5555
+- **Public URL**: https://heyseen.truyenthong.edu.vn (nếu có setup Cloudflare Tunnel)
+
+Xem chi tiết: `./deploy/health_check.sh`
+
+---
+
+## 📚 Documentation
+
+- **[TECHNICAL.md](TECHNICAL.md)** - Kiến trúc, benchmark, troubleshooting chi tiết
+- **[PLAN.md](PLAN.md)** - Roadmap và development plan
+- **[API.md](API.md)** - API documentation
+- **[CONTRIBUTING.md](CONTRIBUTING.md)** - Hướng dẫn đóng góp
 
 ---
 
@@ -236,3 +162,28 @@ Xem chi tiết triển khai tại [PLAN.md](PLAN.md).
 
 
 
+Contributions are welcome! Xem [CONTRIBUTING.md](CONTRIBUTING.md) để biết chi tiết.
+
+- 🐛 **Bug Reports**: [GitHub Issues](https://github.com/phucdhh/HeySeen/issues)
+- 💡 **Feature Requests**: [GitHub Discussions](https://github.com/phucdhh/HeySeen/discussions)
+- 🔧 **Pull Requests**: Fork → Branch → PR
+
+---
+
+## 📄 License
+
+MIT License - xem [LICENSE](LICENSE) để biết chi tiết.
+
+---
+
+## 🙏 Credits
+
+HeySeen sử dụng các công nghệ mã nguồn mở:
+- [Marker](https://github.com/datalab-to/marker) - PDF to Markdown
+- [Surya OCR](https://github.com/VikParuchuri/surya) - Layout Analysis
+- [Texify](https://github.com/VikParuchuri/texify) - Math Recognition
+- [PyTorch](https://pytorch.org/) - Deep Learning Framework
+
+---
+
+**Made with ❤️ for the academic community**
