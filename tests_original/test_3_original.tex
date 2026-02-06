@@ -1,0 +1,107 @@
+\documentclass[12pt, a4paper]{article}
+\usepackage[vietnamese]{babel}
+%\usepackage[utf8]{inputenc}
+\usepackage{amsmath, amsfonts, amssymb}
+\usepackage[left=2cm,right=2cm,top=2cm,bottom=2cm]{geometry}
+\usepackage{tikz} % Thử thách vẽ hình
+\usepackage[version=4]{mhchem} % Thử thách công thức hóa học
+\usepackage{nicematrix} % Thử thách ma trận phức tạp
+\usepackage{booktabs} % Thử thách bảng biểu
+
+\begin{document}
+
+\title{HeySeen Benchmark: Geometric \& Structural Stress Test}
+\author{HeySeen Laboratory - Stress Scenario 003}
+%\date{2026}
+\maketitle
+
+\section{Test1: Hình học và Tọa độ (TikZ)}
+Thử thách lớn nhất cho OCR là tách biệt chữ số trong hình vẽ. Texify phải nhận diện được các nhãn (labels) mà không làm hỏng cấu trúc vector.
+
+\begin{center}
+\begin{tikzpicture}[scale=1.5]
+    \draw[->] (0,0) -- (3,0) node[right] {$x$};
+    \draw[->] (0,0) -- (0,3) node[above] {$y$};
+    \draw[thick, blue] (0,0) -- (2,2) node[midway, sloped, above] {$y=x$};
+    \draw[red] (0,0) circle (1cm);
+    \node at (1.2,0.7) {$P(r,\theta)$};
+    \filldraw (1,0) circle (1pt) node at (1.1,-0.2) {$1$};
+    \filldraw (0,1) circle (1pt) node at (-0.2,1.1) {$1$};
+\end{tikzpicture}
+\end{center}
+
+Hệ tọa độ cực liên hệ với tọa độ Descartes qua:
+\[
+\begin{cases} 
+x = r \cos \theta \\ 
+y = r \sin \theta 
+\end{cases} \implies x^2 + y^2 = r^2
+\]
+
+
+\section{Test2: Ma trận khối và Ký hiệu rỗng}
+Sử dụng các ma trận có phân cách (partitioned matrices). Đây là bài kiểm tra khả năng giữ căn lề của HeySeen.
+
+\[
+\mathbf{M} = \left[
+\begin{array}{cc|c}
+1 & 0 & a \\
+0 & 1 & b \\
+\hline
+0 & 0 & 1
+\end{array}
+\right] \otimes \begin{pmatrix} \lambda_1 & & \mathbf{0} \\ & \ddots & \\ \mathbf{0} & & \lambda_n \end{pmatrix}
+\]
+
+Tính chất của định thức ma trận khối:
+\begin{equation}
+\det \begin{pmatrix} A & B \\ 0 & D \end{pmatrix} = \det(A) \det(D)
+\end{equation}
+
+
+\section{Test 3: Hóa học và Chỉ số phức tạp}
+Texify đôi khi nhầm lẫn giữa công thức toán và công thức hóa học. Hãy xem HeySeen xử lý gói `mhchem` như thế nào.
+
+\subsection{Phản ứng nhiệt nhôm}
+\[
+\ce{2Al + Fe2O3 ->[t^o] Al2O3 + 2Fe}
+\]
+
+\subsection{Cấu tạo hữu cơ và Cân bằng}
+Xét cân bằng phân ly của axit yếu trong dung dịch:
+\[
+\ce{CH3COOH <=> CH3COO- + H+} \quad K_a = \frac{[\ce{CH3COO-}][\ce{H+}]}{[\ce{CH3COOH}]}
+\]
+
+\section{Test 4: Bảng biểu và Thống kê}
+Đánh giá khả năng OCR bảng (Table recognition) - một trong những điểm yếu cố hữu của Marker nếu không được tinh chỉnh.
+
+\begin{table}[h]
+\centering
+\caption{Dữ liệu thực nghiệm HeySeen}
+\begin{tabular}{lcrr}
+\toprule
+Mẫu thử & Tham số $\alpha$ & Giá trị $\beta$ & Sai số ($\sigma$) \\
+\midrule
+Test\_01 & $1.25 \times 10^{-3}$ & 0.982 & $\pm 0.01$ \\
+Test\_02 & $\sum_{i=1}^{n} \frac{1}{i}$ & 1.414 & $\pm 0.05$ \\
+Test\_03 & $\int \sin(x) dx$ & 0.000 & N/A \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+\section{Test 5: Ký hiệu Tổng quát và Mã giả (Pseudocode)}
+Cuối cùng, thử thách khả năng đọc các ký hiệu toán rời rạc lồng trong các bước thuật toán.
+
+\begin{itemize}
+    \item \textbf{Bước 1:} Khởi tạo tập hợp $S = \{ x \in \mathbb{R} \mid |x| < \infty \}$.
+    \item \textbf{Bước 2:} Duyệt $\forall \omega \in \Omega$, tính kỳ vọng:
+    \[ E[\omega] = \sum_{j=1}^{m} p_j \cdot u(\omega_j) \]
+    \item \textbf{Bước 3:} Nếu $E[\omega] > \tau$, thực hiện phép gán $x \leftarrow x + \Delta x$.
+\end{itemize}
+
+Trạng thái hệ thống được mô tả bởi toán tử Hamiltonian:
+\[ \hat{H}\Psi = E\Psi \quad \text{với} \quad \hat{H} = -\frac{\hbar^2}{2m}\nabla^2 + V(\mathbf{r}) \]
+
+\end{document}

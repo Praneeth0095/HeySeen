@@ -1,0 +1,83 @@
+\documentclass[10pt, twocolumn]{article}
+\usepackage[vietnamese]{babel}
+%\usepackage[utf8]{inputenc}
+%\usepackage[T1]{fontenc}
+\usepackage{amsmath, amsfonts, amssymb}
+\usepackage{graphicx}
+\usepackage{lipsum} % Để tạo văn bản giả
+\usepackage{geometry}
+\geometry{top=2cm, bottom=2cm, left=1.5cm, right=1.5cm}
+
+\title{HeySeen Benchmarking: Phân tích hiệu suất OCR trên định dạng bài báo hai cột}
+\author{Nhóm nghiên cứu HeySeen - M2 Pro Performance Team}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Tóm tắt: Bài viết này thiết lập một kịch bản thử nghiệm phức tạp để đánh giá khả năng nhận diện dòng chảy văn bản (text flow) của HeySeen. Chúng tôi tập trung vào việc phân tách các khối toán học nằm xen kẽ giữa các cột hẹp, một vấn đề kinh điển trong xử lý tài liệu khoa học.
+\end{abstract}
+
+\section{Giới thiệu}
+Trong các tạp chí Toán học hiện đại, việc tiết kiệm không gian dẫn đến việc trình bày dạng 2 cột. Điều này yêu cầu OCR phải xác định chính xác ranh giới cột trước khi thực hiện nhận diện ký tự.
+
+\section{Mô hình toán học}
+Xét một hệ thống động lực học phi tuyến được mô tả bởi phương trình trạng thái sau đây:
+\begin{equation}
+\dot{x}(t) = Ax(t) + Bu(t) + f(x,t)
+\end{equation}
+
+Trong đó, ma trận hệ thống $A \in \mathbb{R}^{n \times n}$ có các giá trị riêng thỏa mãn điều kiện ổn định Lyapunov.
+
+\subsection{Hàm năng lượng}
+Ta định nghĩa hàm Lyapunov $V(x)$ cho hệ thống dưới dạng toàn phương:
+\[ V(x) = x^T P x \]
+Với $P$ là ma trận xác định dương, thỏa mãn phương trình Riccati:
+\begin{equation}
+A^T P + PA - PBR^{-1}B^T P + Q = 0
+\end{equation}
+
+\section{Thách thức về bố cục}
+Khi một công thức quá dài, nó có thể đè lên vạch phân cách cột hoặc buộc phải ngắt dòng. Ví dụ về một biểu thức khai triển Taylor bậc cao:
+\begin{align}
+f(x+h) &= f(x) + f'(x)h + \frac{f''(x)}{2!}h^2 \nonumber \\
+&\quad + \frac{f'''(x)}{3!}h^3 + \mathcal{O}(h^4)
+\end{align}
+
+AI cần hiểu rằng dòng thứ 2 của biểu thức trên vẫn thuộc về cột trái, thay vì đọc nhầm sang nội dung của cột phải.
+
+% Chuyển sang cột 2 hoặc trang mới tùy độ dài
+\section{Phương pháp số}
+Chúng ta sử dụng thuật toán Runge-Kutta bậc 4 để xấp xỉ nghiệm của hệ phương trình vi phân:
+\begin{align*}
+k_1 &= h f(t_n, y_n) \\
+k_2 &= h f(t_n + \frac{h}{2}, y_n + \frac{k_1}{2}) \\
+k_3 &= h f(t_n + \frac{h}{2}, y_n + \frac{k_2}{2}) \\
+k_4 &= h f(t_n + h, y_n + k_3)
+\end{align*}
+
+Giá trị tiếp theo được tính bởi:
+\[ y_{n+1} = y_n + \frac{1}{6}(k_1 + 2k_2 + 2k_3 + k_4) \]
+
+\section{Kết quả thực nghiệm}
+Bảng dưới đây so sánh thời gian xử lý của HeySeen trên chip M2 Pro:
+
+\begin{itemize}
+    \item \textbf{Cột 1:} Nhận diện cấu trúc nhanh nhờ Surya (0.5s).
+    \item \textbf{Cột 2:} Texify inference các công thức phức tạp (1.2s).
+\end{itemize}
+
+\section{Kết luận}
+Việc xử lý dạng hai cột yêu cầu sự phối hợp nhịp nhàng giữa mô hình nhận diện layout và mô hình nhận diện toán học. HeySeen cần chứng minh khả năng không bị "lạc lối" giữa các ranh giới cột.
+
+\onecolumn
+\section*{Phụ lục: Công thức tràn cột (Wide Equation)}
+Đôi khi bài báo có các công thức cực dài cần chiếm cả 2 cột. HeySeen phải nhận diện được sự thay đổi layout từ `twocolumn` sang `onecolumn` này:
+
+\[
+\mathcal{I} = \int_{-\infty}^{\infty} \int_{-\infty}^{\infty} e^{-(x^2 + y^2)} dx dy = \int_{0}^{2\pi} \int_{0}^{\infty} e^{-r^2} r \, dr \, d\theta = \pi \left[ -e^{-r^2} \right]_{0}^{\infty} = \pi
+\]
+
+\end{document}

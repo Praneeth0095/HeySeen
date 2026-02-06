@@ -1,0 +1,553 @@
+\documentclass[11pt, letterpaper]{article}
+%\usepackage[vietnamese]{babel}
+%\usepackage[utf8]{inputenc}
+\usepackage{amsmath, amsthm, amsfonts, amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{geometry}
+\usepackage{tikz}
+\usepackage{algorithm}
+\usepackage{algorithmic}
+\usepackage{multicol}
+\usepackage{enumitem}
+\geometry{margin=1in}
+
+% Định nghĩa các môi trường toán học để test khả năng nhận diện cấu trúc
+\newtheorem{theorem}{Định lý}[section]
+\newtheorem{lemma}[theorem]{Bổ đề}
+\newtheorem{corollary}{Hệ quả}[theorem]
+\newtheorem{proposition}{Mệnh đề}[section]
+\newtheorem{definition}{Định nghĩa}[section]
+\newtheorem{example}{Ví dụ}[section]
+\newtheorem{remark}{Nhận xét}[section]
+
+\begin{document}
+
+\title{Phân tích sự hội tụ của các thuật toán tối ưu hóa bậc cao trong không gian Hilbert}
+\author{HeySeen Research Group \\ \small Mac Mini M2 Pro Computing Lab}
+\date{\today}
+\maketitle
+
+\begin{abstract}
+Bài báo này trình bày một phân tích toàn diện về tốc độ hội tụ của các phương pháp Gradient Descent cải tiến. Chúng tôi cung cấp các chứng minh toán học chặt chẽ và kết quả mô phỏng số để đánh giá hiệu suất của hệ thống HeySeen OCR trong việc xử lý các tài liệu học thuật dài hơi. Đặc biệt, chúng tôi tập trung vào các phương pháp tối ưu momentum và các biến thể adaptive learning rate như Adam, RMSprop, và AdaGrad trong không gian vô hạn chiều.
+\end{abstract}
+
+\tableofcontents
+\newpage
+
+\section{Giới thiệu}
+Sự phát triển của học sâu yêu cầu các kỹ thuật tối ưu hóa mạnh mẽ. Trong bối cảnh OCR, việc hiểu các ký hiệu toán học lồng trong văn bản là cực kỳ quan trọng. Đặc biệt, các hệ thống OCR hiện đại phải đối mặt với những thách thức sau:
+
+\begin{itemize}
+    \item Nhận diện các ký hiệu toán học phức tạp: $\nabla$, $\partial$, $\oint$, $\sum$, $\prod$
+    \item Phân biệt chữ viết hoa/thường trong công thức: $X$ vs $x$, $\Gamma$ vs $\gamma$
+    \item Xử lý các chỉ số lồng nhau: $x_{i_j^{(k)}}$, $a_{n_{m_l}}$
+    \item Nhận diện matrices và vectors: $\mathbf{A}$, $\vec{v}$, $\underline{u}$
+\end{itemize}
+
+\subsection{Động lực nghiên cứu}
+Cho $\mathcal{H}$ là không gian Hilbert khả ly với tích vô hướng $\langle \cdot, \cdot \rangle$ và chuẩn cảm sinh $\|\cdot\|$. Xét bài toán tối ưu hóa:
+\begin{equation}\label{eq:main_problem}
+\min_{x \in \mathcal{H}} f(x) := \mathbb{E}_{\xi \sim \mathcal{D}}[\ell(x; \xi)]
+\end{equation}
+trong đó $\ell: \mathcal{H} \times \Xi \to \mathbb{R}$ là hàm mất mát và $\mathcal{D}$ là phân phối xác suất trên không gian mẫu $\Xi$.
+
+\subsection{Đóng góp chính}
+\begin{enumerate}[label=(\roman*)]
+    \item Chứng minh tốc độ hội tụ $\mathcal{O}(1/k)$ cho gradient descent với momentum
+    \item Phân tích độ phức tạp mẫu $\tilde{\mathcal{O}}(\epsilon^{-2})$ cho phương pháp stochastic
+    \item Đề xuất thuật toán hybrid kết hợp ưu điểm của Adam và L-BFGS
+\end{enumerate}
+
+\section{Cấu trúc toán học phức tạp}
+
+\begin{definition}[Hàm lồi mạnh]
+Hàm $f: \mathcal{H} \to \mathbb{R}$ được gọi là lồi mạnh với tham số $m > 0$ nếu:
+\begin{equation}
+f(\lambda x + (1-\lambda)y) \leq \lambda f(x) + (1-\lambda)f(y) - \frac{m}{2}\lambda(1-\lambda)\|x-y\|^2
+\end{equation}
+với mọi $x, y \in \mathcal{H}$ và $\lambda \in [0,1]$.
+\end{definition}
+
+\begin{theorem}[Định lý hội tụ cơ bản]\label{thm:convergence}
+Giả sử $f: \mathcal{H} \to \mathbb{R}$ là một hàm lồi mạnh với tham số $m > 0$ và $L$-smooth. Khi đó, với mọi $x, y \in \mathcal{H}$, ta có:
+\begin{equation}
+f(y) \geq f(x) + \langle \nabla f(x), y - x \rangle + \frac{m}{2} \|y - x\|^2
+\end{equation}
+Hơn nữa, thuật toán gradient descent với step size $\alpha = \frac{1}{L}$ thỏa mãn:
+\begin{equation}
+f(x_k) - f(x^*) \leq \left(1 - \frac{m}{L}\right)^k [f(x_0) - f(x^*)]
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+Theo định nghĩa của tính lồi mạnh, ta xét hàm bổ trợ $g(t) = f(x + t(y-x))$ với $t \in [0,1]$. 
+
+\textbf{Bước 1:} Khai triển Taylor bậc hai
+\begin{align}
+g(1) &= g(0) + g'(0) + \int_0^1 (1-t)g''(t)dt \\
+&= f(x) + \langle \nabla f(x), y-x \rangle + \int_0^1 (1-t)\langle \nabla^2 f(x+t(y-x))(y-x), y-x \rangle dt
+\end{align}
+
+\textbf{Bước 2:} Áp dụng tính lồi mạnh
+Do $f$ lồi mạnh với tham số $m$, ta có $\nabla^2 f \succeq m I$, suy ra:
+\[
+\int_0^1 (1-t)\langle \nabla^2 f(x+t(y-x))(y-x), y-x \rangle dt \geq \frac{m}{2}\|y-x\|^2
+\]
+
+\textbf{Bước 3:} Kết luận
+Kết hợp hai bước trên, ta thu được bất đẳng thức cần chứng minh. Phần còn lại về tốc độ hội tụ được suy ra từ việc áp dụng lặp lại bất đẳng thức trên.
+\end{proof}
+
+\begin{lemma}[Bất đẳng thức Young]\label{lem:young}
+Với mọi $a, b \geq 0$ và $p, q > 1$ thỏa mãn $\frac{1}{p} + \frac{1}{q} = 1$, ta có:
+\begin{equation}
+ab \leq \frac{a^p}{p} + \frac{b^q}{q}
+\end{equation}
+Đẳng thức xảy ra khi và chỉ khi $a^p = b^q$.
+\end{lemma}
+
+\begin{corollary}
+Nếu $f$ là $m$-strongly convex và $L$-smooth thì số điều kiện $\kappa = \frac{L}{m}$ xác định tốc độ hội tụ theo:
+\begin{equation}
+\text{Iteration complexity} = \mathcal{O}\left(\kappa \log \frac{1}{\epsilon}\right)
+\end{equation}
+\end{corollary}
+
+\section{Các hệ thức truy hồi (Recursive Relations)}
+
+\subsection{Momentum Method}
+Đây là phần để test xem HeySeen có bị "mỏi" khi đọc các chỉ số lặp đi lặp lại hay không:
+\begin{align}
+v_{k+1} &= \beta v_k + \nabla f(x_k) \label{eq:momentum_v}\\
+x_{k+1} &= x_k - \alpha_k v_{k+1} \label{eq:momentum_x}\\
+\beta_k &= \frac{k-1}{k+2} \quad \text{(Nesterov's choice)} \label{eq:nesterov_beta}
+\end{align}
+
+\subsection{Adam Optimizer}
+Thuật toán Adam kết hợp momentum và RMSprop:
+\begin{align}
+m_k &= \beta_1 m_{k-1} + (1-\beta_1)\nabla f(x_k) \\
+v_k &= \beta_2 v_{k-1} + (1-\beta_2)[\nabla f(x_k)]^2 \\
+\hat{m}_k &= \frac{m_k}{1-\beta_1^k}, \quad \hat{v}_k = \frac{v_k}{1-\beta_2^k} \\
+x_{k+1} &= x_k - \frac{\alpha}{\sqrt{\hat{v}_k} + \epsilon}\hat{m}_k
+\end{align}
+với hyperparameters thường dùng: $\beta_1 = 0.9$, $\beta_2 = 0.999$, $\epsilon = 10^{-8}$.
+
+\subsection{Test chỉ số phức tạp}
+Các biểu thức sau test khả năng nhận diện chỉ số lồng nhau:
+\begin{equation}
+\sum_{i=1}^{n} \sum_{j=1}^{m} \sum_{k=1}^{p} a_{ijk} x_i^{(j)} y_k^{[j,i]} = \prod_{\ell=1}^{q} \left(\frac{\partial^2 f}{\partial x_\ell \partial y_\ell}\right)_{(\xi_\ell, \eta_\ell)}
+\end{equation}
+
+\begin{equation}
+\mathcal{L}_{\theta}^{(\alpha,\beta)}(x_{t_1}^{(i_1)}, \ldots, x_{t_n}^{(i_n)}) = \frac{1}{N}\sum_{k=1}^{N}\left[\ell(f_\theta(x_k^{(i_k)}), y_k^{(i_k)}) + \lambda\|\theta\|_2^2\right]
+\end{equation}
+
+\section{Ma trận và Đại số tuyến tính}
+
+\subsection{Test nhận diện ma trận}
+\begin{equation}
+\mathbf{A} = \begin{pmatrix}
+a_{11} & a_{12} & \cdots & a_{1n} \\
+a_{21} & a_{22} & \cdots & a_{2n} \\
+\vdots & \vdots & \ddots & \vdots \\
+a_{m1} & a_{m2} & \cdots & a_{mn}
+\end{pmatrix}, \quad
+\mathbf{B} = \begin{bmatrix}
+b_{11} & b_{12} \\
+b_{21} & b_{22}
+\end{bmatrix}
+\end{equation}
+
+\begin{proposition}[Phân tích SVD]
+Mọi ma trận $\mathbf{A} \in \mathbb{R}^{m \times n}$ đều có phân tích:
+\begin{equation}
+\mathbf{A} = \mathbf{U}\boldsymbol{\Sigma}\mathbf{V}^T = \sum_{i=1}^{\min(m,n)} \sigma_i \mathbf{u}_i \mathbf{v}_i^T
+\end{equation}
+trong đó $\mathbf{U} \in \mathbb{R}^{m \times m}$, $\mathbf{V} \in \mathbb{R}^{n \times n}$ là các ma trận trực giao và $\boldsymbol{\Sigma}$ là ma trận đường chéo với các giá trị kỳ dị $\sigma_1 \geq \sigma_2 \geq \cdots \geq 0$.
+\end{proposition}
+
+\subsection{Eigenvalues và Eigenvectors}
+Bài toán trị riêng:
+\begin{equation}
+\mathbf{A}\mathbf{v} = \lambda \mathbf{v} \quad \Leftrightarrow \quad \det(\mathbf{A} - \lambda \mathbf{I}) = 0
+\end{equation}
+
+Đa thức đặc trưng:
+\begin{equation}
+p_{\mathbf{A}}(\lambda) = \det\begin{vmatrix}
+a_{11} - \lambda & a_{12} & a_{13} \\
+a_{21} & a_{22} - \lambda & a_{23} \\
+a_{31} & a_{32} & a_{33} - \lambda
+\end{vmatrix}
+\end{equation}
+
+\section{Kết quả thực nghiệm số}
+
+\subsection{Bảng dữ liệu mở rộng}
+Dưới đây là bảng dữ liệu lớn để test khả năng giữ định dạng Table của HeySeen qua nhiều trang.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{cccccc}
+\toprule
+Iteration ($k$) & Step Size ($\alpha_k$) & Obj Value $f(x_k)$ & $\|\nabla f(x_k)\|$ & $\Delta f$ & Status \\
+\midrule
+1 & 0.0100 & 154.2200 & 12.450 & --- & Active \\
+2 & 0.0100 & 142.1000 & 10.320 & 12.120 & Active \\
+5 & 0.0095 & 118.5600 & 7.845 & 23.540 & Active \\
+10 & 0.0087 & 89.3400 & 5.120 & 29.220 & Active \\
+20 & 0.0072 & 54.2100 & 2.980 & 35.130 & Active \\
+50 & 0.0045 & 18.6700 & 1.125 & 35.540 & Active \\
+100 & 0.0023 & 5.4320 & 0.456 & 13.238 & Active \\
+200 & 0.0012 & 1.2340 & 0.189 & 4.198 & Active \\
+500 & 0.0005 & 0.0987 & 0.042 & 1.135 & Converging \\
+1000 & 1e-05 & 0.0004 & 0.008 & 0.098 & Converged \\
+\bottomrule
+\end{tabular}
+\caption{Bảng so sánh hiệu suất thuật toán Gradient Descent với momentum.}
+\label{tab:results1}
+\end{table}
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{lcccccc}
+\toprule
+\textbf{Algorithm} & \textbf{Time (s)} & \textbf{Memory (MB)} & \textbf{Accuracy} & $\kappa$ & \textbf{Iters} & \textbf{Converged?} \\
+\midrule
+SGD & 12.34 & 128.5 & 0.9234 & 100.0 & 5000 & \checkmark \\
+Momentum & 10.87 & 156.2 & 0.9456 & 100.0 & 3200 & \checkmark \\
+Adam & 15.23 & 189.7 & 0.9567 & 100.0 & 2100 & \checkmark \\
+RMSprop & 14.56 & 172.3 & 0.9489 & 100.0 & 2800 & \checkmark \\
+AdaGrad & 11.92 & 145.8 & 0.9312 & 100.0 & 4500 & \checkmark \\
+L-BFGS & 8.45 & 234.6 & 0.9601 & 100.0 & 1200 & \checkmark \\
+\bottomrule
+\end{tabular}
+\caption{So sánh các thuật toán tối ưu hóa trên bài toán classification.}
+\label{tab:comparison}
+\end{table}
+
+\section{Phân tích đa tạp Riemann}
+
+\subsection{Metric tensor}
+Thử thách HeySeen với các ký hiệu hình học vi phân:
+\begin{equation}
+ds^2 = \sum_{i,j=1}^{n} g_{ij}(x) dx^i dx^j = g_{\mu\nu}dx^\mu dx^\nu \quad \text{(Einstein summation)}
+\end{equation}
+
+\subsection{Christoffel symbols}
+Ký hiệu Christoffel loại hai:
+\begin{equation}
+\Gamma_{ij}^k = \frac{1}{2} g^{k\ell} \left(\frac{\partial g_{j\ell}}{\partial x^i} + \frac{\partial g_{i\ell}}{\partial x^j} - \frac{\partial g_{ij}}{\partial x^\ell}\right)
+\end{equation}
+
+\subsection{Riemann curvature tensor}
+\begin{equation}
+R^\rho_{\sigma\mu\nu} = \partial_\mu\Gamma^\rho_{\nu\sigma} - \partial_\nu\Gamma^\rho_{\mu\sigma} + \Gamma^\rho_{\mu\lambda}\Gamma^\lambda_{\nu\sigma} - \Gamma^\rho_{\nu\lambda}\Gamma^\lambda_{\mu\sigma}
+\end{equation}
+
+Ricci tensor và Ricci scalar:
+\begin{align}
+R_{\mu\nu} &= R^\lambda_{\mu\lambda\nu} = g^{\rho\sigma}R_{\rho\mu\sigma\nu} \\
+R &= g^{\mu\nu}R_{\mu\nu}
+\end{align}
+
+\subsection{Geodesic equation}
+Phương trình geodesic trong tọa độ cục bộ:
+\begin{equation}
+\frac{d^2 x^\mu}{dt^2} + \Gamma^\mu_{\alpha\beta}\frac{dx^\alpha}{dt}\frac{dx^\beta}{dt} = 0
+\end{equation}
+
+\section{Các công thức đặc biệt và ký hiệu hiếm}
+
+\subsection{Tích phân phức tạp}
+\begin{align}
+\oint_{\partial D} f(z)dz &= 2\pi i \sum_{k} \text{Res}(f, z_k) \\
+\int_{-\infty}^{\infty} e^{-x^2}dx &= \sqrt{\pi} \\
+\iint_{\mathbb{R}^2} e^{-(x^2+y^2)}dxdy &= \pi \\
+\iiint_{\mathbb{R}^3} e^{-(x^2+y^2+z^2)}dxdydz &= \pi^{3/2}
+\end{align}
+
+\subsection{Các ký hiệu tập hợp và logic}
+\begin{align}
+\mathbb{N} &:= \{0, 1, 2, 3, \ldots\} \\
+\mathbb{Z} &:= \{\ldots, -2, -1, 0, 1, 2, \ldots\} \\
+\mathbb{Q} &:= \left\{\frac{p}{q} : p, q \in \mathbb{Z}, q \neq 0\right\} \\
+\mathbb{R} &:= \text{tập số thực} \\
+\mathbb{C} &:= \{a + bi : a, b \in \mathbb{R}, i^2 = -1\}
+\end{align}
+
+Logic symbols:
+\begin{equation}
+\forall x \in X, \exists y \in Y : P(x) \Rightarrow Q(y) \Leftrightarrow \neg(\exists x \in X : P(x) \wedge \neg Q(y))
+\end{equation}
+
+\subsection{Các chữ cái Hy Lạp và Gothic}
+Lowercase: $\alpha, \beta, \gamma, \delta, \epsilon, \varepsilon, \zeta, \eta, \theta, \vartheta, \iota, \kappa, \lambda, \mu, \nu, \xi, \pi, \varpi, \rho, \varrho, \sigma, \varsigma, \tau, \upsilon, \phi, \varphi, \chi, \psi, \omega$
+
+Uppercase: $\Gamma, \Delta, \Theta, \Lambda, \Xi, \Pi, \Sigma, \Upsilon, \Phi, \Psi, \Omega$
+
+Gothic/Fraktur: $\mathfrak{A}, \mathfrak{B}, \mathfrak{g}, \mathfrak{so}(3), \mathfrak{su}(2)$
+
+Calligraphic: $\mathcal{A}, \mathcal{B}, \mathcal{F}, \mathcal{L}, \mathcal{O}, \mathcal{H}$
+
+Blackboard bold: $\mathbb{A}, \mathbb{E}, \mathbb{P}, \mathbb{V}$
+
+\section{Thuật toán (Algorithm Environment Test)}
+
+\begin{algorithm}
+\caption{Gradient Descent with Momentum}
+\label{alg:momentum}
+\begin{algorithmic}[1]
+\REQUIRE Learning rate $\alpha > 0$, momentum coefficient $\beta \in [0,1)$, initial point $x_0$
+\ENSURE Approximate minimizer $x^*$
+\STATE Initialize $v_0 = 0$
+\FOR{$k = 0, 1, 2, \ldots$ until convergence}
+    \STATE Compute gradient: $g_k = \nabla f(x_k)$
+    \STATE Update velocity: $v_{k+1} = \beta v_k + g_k$
+    \STATE Update parameters: $x_{k+1} = x_k - \alpha v_{k+1}$
+    \IF{$\|g_k\| < \epsilon$}
+        \STATE \textbf{break}
+    \ENDIF
+\ENDFOR
+\RETURN $x_k$
+\end{algorithmic}
+\end{algorithm}
+
+\section{Các trường hợp biên và đặc biệt}
+
+\subsection{Phân số phức tạp}
+\begin{equation}
+\cfrac{1}{1 + \cfrac{1}{1 + \cfrac{1}{1 + \cfrac{1}{1 + \ddots}}}} = \frac{\sqrt{5} - 1}{2} = \phi^{-1}
+\end{equation}
+
+\subsection{Căn thức lồng nhau}
+\begin{equation}
+\sqrt{1 + \sqrt{1 + \sqrt{1 + \sqrt{1 + \cdots}}}} = \phi = \frac{1 + \sqrt{5}}{2}
+\end{equation}
+
+\subsection{Binomial coefficients}
+\begin{equation}
+\binom{n}{k} = \frac{n!}{k!(n-k)!} = \binom{n}{n-k}
+\end{equation}
+
+\subsection{Text in math mode}
+\begin{equation}
+f(x) = \begin{cases}
+x^2 & \text{if } x \geq 0 \\
+-x^2 & \text{if } x < 0 \\
+\text{undefined} & \text{otherwise}
+\end{cases}
+\end{equation}
+
+\section{Multiline equations và alignment}
+
+\subsection{Align environment}
+\begin{align}
+(a + b)^3 &= (a + b)(a + b)(a + b) \\
+&= (a^2 + 2ab + b^2)(a + b) \\
+&= a^3 + 2a^2b + ab^2 + a^2b + 2ab^2 + b^3 \\
+&= a^3 + 3a^2b + 3ab^2 + b^3
+\end{align}
+
+\subsection{Split environment}
+\begin{equation}
+\begin{split}
+\mathcal{L}(\theta) &= \sum_{i=1}^{N} \log p(y_i | x_i; \theta) \\
+&= \sum_{i=1}^{N} \left[\log \frac{\exp(f_\theta(x_i)_{y_i})}{\sum_{j=1}^{C} \exp(f_\theta(x_i)_j)}\right] \\
+&= \sum_{i=1}^{N} \left[f_\theta(x_i)_{y_i} - \log\sum_{j=1}^{C} \exp(f_\theta(x_i)_j)\right]
+\end{split}
+\end{equation}
+
+\section{Văn bản dài để mở rộng tài liệu}
+
+\subsection{Lý thuyết tối ưu hóa}
+Tối ưu hóa là một lĩnh vực quan trọng trong toán học ứng dụng, với ứng dụng rộng rãi trong machine learning, nghiên cứu vận hành, kinh tế, và kỹ thuật. Bài toán tối ưu hóa cơ bản có dạng:
+\begin{equation}
+\min_{x \in \mathcal{X}} f(x) \quad \text{subject to} \quad g_i(x) \leq 0, \; h_j(x) = 0
+\end{equation}
+trong đó $f: \mathbb{R}^n \to \mathbb{R}$ là hàm mục tiêu, $\mathcal{X} \subseteq \mathbb{R}^n$ là miền ràng buộc, $g_i$ là các ràng buộc bất đẳng thức và $h_j$ là các ràng buộc đẳng thức.
+
+Điều kiện KKT (Karush-Kuhn-Tucker) đóng vai trò trung tâm trong lý thuyết tối ưu hóa. Cho bài toán trên, tại điểm tối ưu $x^*$, tồn tại các multipliers $\lambda_i^* \geq 0$ và $\mu_j^*$ sao cho:
+\begin{align}
+\nabla f(x^*) + \sum_i \lambda_i^* \nabla g_i(x^*) + \sum_j \mu_j^* \nabla h_j(x^*) &= 0 \\
+\lambda_i^* g_i(x^*) &= 0 \quad \forall i \\
+g_i(x^*) &\leq 0 \quad \forall i \\
+h_j(x^*) &= 0 \quad \forall j \\
+\lambda_i^* &\geq 0 \quad \forall i
+\end{align}
+
+Trong machine learning, chúng ta thường gặp bài toán tối ưu hóa empirical risk minimization:
+\begin{equation}
+\min_{\theta \in \Theta} \frac{1}{N}\sum_{i=1}^{N} \ell(f_\theta(x_i), y_i) + \lambda \mathcal{R}(\theta)
+\end{equation}
+trong đó $\ell$ là loss function, $f_\theta$ là model parameterized by $\theta$, và $\mathcal{R}$ là regularizer.
+
+\subsection{Phân tích hội tụ}
+Xét thuật toán gradient descent:
+\begin{equation}
+\theta_{k+1} = \theta_k - \alpha_k \nabla f(\theta_k)
+\end{equation}
+Với giả thiết $f$ là $L$-smooth và $m$-strongly convex, ta có:
+\begin{theorem}
+Nếu step size $\alpha_k = \alpha = \frac{2}{m + L}$ thì:
+\begin{equation}
+\|\theta_k - \theta^*\|^2 \leq \left(\frac{\kappa - 1}{\kappa + 1}\right)^{2k} \|\theta_0 - \theta^*\|^2
+\end{equation}
+trong đó $\kappa = \frac{L}{m}$ là condition number.
+\end{theorem}
+
+Điều này cho thấy tốc độ hội tụ linear với rate phụ thuộc vào condition number. Khi $\kappa$ lớn (ill-conditioned problem), hội tụ chậm. Các phương pháp như preconditioning, momentum, và adaptive learning rate được thiết kế để cải thiện điều này.
+
+\subsection{Stochastic Optimization}
+Trong deep learning, chúng ta thường làm việc với datasets lớn nên việc tính toán gradient đầy đủ $\nabla f(\theta) = \frac{1}{N}\sum_{i=1}^{N}\nabla\ell_i(\theta)$ là không khả thi. Thay vào đó, ta dùng stochastic gradient:
+\begin{equation}
+g_k = \nabla \ell_{i_k}(\theta_k)
+\end{equation}
+trong đó $i_k$ được chọn ngẫu nhiên từ $\{1, \ldots, N\}$.
+
+Thuật toán SGD có dạng:
+\begin{equation}
+\theta_{k+1} = \theta_k - \alpha_k g_k
+\end{equation}
+
+Một kết quả quan trọng:
+\begin{theorem}[SGD convergence]
+Giả sử $\mathbb{E}[\|g_k\|^2] \leq G^2$ và $\sum_{k=1}^\infty \alpha_k = \infty$, $\sum_{k=1}^\infty \alpha_k^2 < \infty$. Khi đó:
+\begin{equation}
+\liminf_{k \to \infty} \mathbb{E}[\|\nabla f(\theta_k)\|^2] = 0
+\end{equation}
+\end{theorem}
+
+Mini-batch SGD sử dụng gradient trung bình trên một tập con nhỏ:
+\begin{equation}
+g_k = \frac{1}{B}\sum_{i \in \mathcal{B}_k} \nabla \ell_i(\theta_k)
+\end{equation}
+với $|\mathcal{B}_k| = B$ là batch size.
+
+\subsection{Advanced Optimizers}
+
+\textbf{Adam (Adaptive Moment Estimation)} kết hợp momentum và adaptive learning rates:
+\begin{align}
+m_k &= \beta_1 m_{k-1} + (1-\beta_1)g_k \\
+v_k &= \beta_2 v_{k-1} + (1-\beta_2)g_k^2 \\
+\hat{m}_k &= \frac{m_k}{1-\beta_1^k}, \quad \hat{v}_k = \frac{v_k}{1-\beta_2^k} \\
+\theta_{k+1} &= \theta_k - \frac{\alpha}{\sqrt{\hat{v}_k} + \epsilon}\hat{m}_k
+\end{align}
+
+\textbf{AdamW} thêm weight decay:
+\begin{equation}
+\theta_{k+1} = \theta_k - \alpha\left(\frac{\hat{m}_k}{\sqrt{\hat{v}_k} + \epsilon} + \lambda\theta_k\right)
+\end{equation}
+
+\textbf{Lion (EvoLved Sign Momentum)} là optimizer mới:
+\begin{align}
+c_k &= \beta_1 m_{k-1} + (1-\beta_1)g_k \\
+\theta_{k+1} &= \theta_k - \alpha \cdot \text{sign}(c_k) \\
+m_k &= \beta_2 m_{k-1} + (1-\beta_2)g_k
+\end{align}
+
+\section{Phần bổ sung về Neural Networks}
+
+\subsection{Backpropagation}
+Xét một neural network với $L$ layers. Forward pass:
+\begin{align}
+z^{(\ell)} &= W^{(\ell)} a^{(\ell-1)} + b^{(\ell)} \\
+a^{(\ell)} &= \sigma(z^{(\ell)})
+\end{align}
+trong đó $\sigma$ là activation function (ReLU, sigmoid, tanh, ...).
+
+Backward pass (chain rule):
+\begin{align}
+\delta^{(L)} &= \nabla_{a^{(L)}} \mathcal{L} \odot \sigma'(z^{(L)}) \\
+\delta^{(\ell)} &= (W^{(\ell+1)})^T \delta^{(\ell+1)} \odot \sigma'(z^{(\ell)}) \\
+\frac{\partial \mathcal{L}}{\partial W^{(\ell)}} &= \delta^{(\ell)} (a^{(\ell-1)})^T \\
+\frac{\partial \mathcal{L}}{\partial b^{(\ell)}} &= \delta^{(\ell)}
+\end{align}
+
+\subsection{Batch Normalization}
+Batch normalization chuẩn hóa activations:
+\begin{align}
+\mu_{\mathcal{B}} &= \frac{1}{B}\sum_{i=1}^{B} x_i \\
+\sigma_{\mathcal{B}}^2 &= \frac{1}{B}\sum_{i=1}^{B} (x_i - \mu_{\mathcal{B}})^2 \\
+\hat{x}_i &= \frac{x_i - \mu_{\mathcal{B}}}{\sqrt{\sigma_{\mathcal{B}}^2 + \epsilon}} \\
+y_i &= \gamma \hat{x}_i + \beta
+\end{align}
+trong đó $\gamma, \beta$ là learnable parameters.
+
+\section{Kết luận}
+
+Bài báo này đã trình bày một phân tích toàn diện về các thuật toán tối ưu hóa trong machine learning. Chúng tôi đã chứng minh các kết quả lý thuyết về tốc độ hội tụ và độ phức tạp tính toán, đồng thời cung cấp các kết quả thực nghiệm minh họa.
+
+Các hướng nghiên cứu tương lai bao gồm:
+\begin{enumerate}
+    \item Phân tích tối ưu hóa trên manifolds non-Euclidean
+    \item Thiết kế adaptive optimizers cho federated learning
+    \item Nghiên cứu optimization landscape của deep networks
+    \item Phát triển second-order methods với computational efficiency cao
+\end{enumerate}
+
+\section*{Lời cảm ơn}
+Chúng tôi xin cảm ơn HeySeen team và Mac Mini M2 Pro đã cung cấp tài nguyên tính toán cho nghiên cứu này.
+
+\begin{thebibliography}{99}
+\bibitem{heyseen2026}
+HeySeen Research Group. (2026). \textit{OCR Mastery on Apple Silicon: A Comprehensive Study}. Journal of AI Vision, 15(3), 234--256.
+
+\bibitem{marker2024}
+Paruchuri, V. (2024). \textit{Marker: The open-source PDF to Markdown converter}. GitHub Repository. \url{https://github.com/VikParuchuri/marker}
+
+\bibitem{goodfellow2016}
+Goodfellow, I., Bengio, Y., \& Courville, A. (2016). \textit{Deep Learning}. MIT Press.
+
+\bibitem{nesterov2004}
+Nesterov, Y. (2004). \textit{Introductory Lectures on Convex Optimization: A Basic Course}. Springer.
+
+\bibitem{kingma2014}
+Kingma, D. P., \& Ba, J. (2014). Adam: A method for stochastic optimization. \textit{arXiv preprint arXiv:1412.6980}.
+
+\bibitem{bottou2018}
+Bottou, L., Curtis, F. E., \& Nocedal, J. (2018). Optimization methods for large-scale machine learning. \textit{SIAM Review}, 60(2), 223--311.
+
+\bibitem{ruder2016}
+Ruder, S. (2016). An overview of gradient descent optimization algorithms. \textit{arXiv preprint arXiv:1609.04747}.
+
+\bibitem{polyak1964}
+Polyak, B. T. (1964). Some methods of speeding up the convergence of iteration methods. \textit{USSR Computational Mathematics and Mathematical Physics}, 4(5), 1--17.
+
+\bibitem{duchi2011}
+Duchi, J., Hazan, E., \& Singer, Y. (2011). Adaptive subgradient methods for online learning and stochastic optimization. \textit{Journal of Machine Learning Research}, 12, 2121--2159.
+
+\bibitem{chen2023}
+Chen, X., et al. (2023). Symbolic Discovery of Optimization Algorithms. \textit{arXiv preprint arXiv:2302.06675}.
+\end{thebibliography}
+
+\appendix
+
+\section{Appendix: Bổ sung các công thức phức tạp}
+
+\subsection{Lagrange multipliers}
+\begin{equation}
+\mathcal{L}(x, \lambda) = f(x) + \sum_{i=1}^{m} \lambda_i g_i(x) + \sum_{j=1}^{p} \mu_j h_j(x)
+\end{equation}
+
+\subsection{Taylor expansion}
+\begin{equation}
+f(x + \Delta x) = f(x) + \nabla f(x)^T \Delta x + \frac{1}{2}\Delta x^T \nabla^2 f(x) \Delta x + \mathcal{O}(\|\Delta x\|^3)
+\end{equation}
+
+\subsection{Fourier Transform}
+\begin{align}
+\hat{f}(\omega) &= \int_{-\infty}^{\infty} f(t) e^{-i\omega t} dt \\
+f(t) &= \frac{1}{2\pi}\int_{-\infty}^{\infty} \hat{f}(\omega) e^{i\omega t} d\omega
+\end{align}
+
+\subsection{Convolution}
+\begin{equation}
+(f * g)(t) = \int_{-\infty}^{\infty} f(\tau)g(t - \tau)d\tau
+\end{equation}
+
+\end{document}

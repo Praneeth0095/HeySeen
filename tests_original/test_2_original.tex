@@ -1,0 +1,107 @@
+\documentclass[12pt, a4paper]{article}
+\usepackage[vietnamese]{babel}
+%\usepackage[utf8]{inputenc}
+%\usepackage[T1]{fontenc}
+\usepackage{amsmath, amsfonts, amssymb, amsthm}
+\usepackage{geometry}
+\geometry{margin=2.5cm}
+
+\begin{document}
+
+\title{HeySeen Benchmark v2: Advanced Mathematical OCR Stress Test}
+\author{HeySeen Project - M2 Pro Performance Suite}
+\date{}
+\maketitle
+
+\section{Trang 1: Giải tích đa biến và Giải tích vector}
+Trong phần này, HeySeen cần nhận diện chính xác các ký hiệu tích phân bội và các toán tử vector. Đây là bài test cho việc nhận diện chỉ số dưới và ký hiệu đặc biệt.
+
+\subsection{Định lý Stokes và Gauss}
+Định lý Stokes liên quan giữa tích phân mặt của xoáy của một trường vector với tích phân đường của trường vector đó quanh biên của mặt:
+\[
+\oint_{\partial S} \mathbf{F} \cdot d\mathbf{r} = \iint_{S} (\nabla \times \mathbf{F}) \cdot d\mathbf{S}
+\]
+
+Tương tự, định lý phân kỳ (Divergence Theorem) được phát biểu như sau:
+\begin{equation}
+\iiint_{V} (\nabla \cdot \mathbf{F}) \, dV = \oiint_{\partial V} (\mathbf{F} \cdot \mathbf{n}) \, dS
+\end{equation}
+
+\subsection{Giới hạn và sự hội tụ}
+Xét sự hội tụ của chuỗi hàm số, Texify cần phân biệt được sự khác nhau giữa hội tụ điểm và hội tụ đều:
+\[
+f_n(x) \xrightarrow{\text{h.t.đ}} f(x) \iff \lim_{n \to \infty} \left( \sup_{x \in D} |f_n(x) - f(x)| \right) = 0
+\]
+
+\newpage
+
+\section{Trang 2: Đại số hiện đại và Cấu trúc Logic}
+Trang này tập trung vào các ký hiệu Logic học và Lý thuyết tập hợp, nơi các ký tự $\forall, \exists, \neg, \implies$ xuất hiện dày đặc.
+
+\subsection{Logic toán học}
+Một mệnh đề toán học phức tạp để kiểm tra khả năng nhận diện ký hiệu nội dòng:
+\[
+\forall \epsilon > 0, \exists \delta > 0, \forall x \in D : 0 < |x - c| < \delta \implies |f(x) - L| < \epsilon
+\]
+
+\subsection{Cấu trúc Nhóm và Vành}
+Giả sử $(G, \cdot)$ là một nhóm. Một nhóm con $H$ của $G$ được gọi là nhóm con chuẩn tắc nếu:
+\begin{equation}
+\forall g \in G, \forall h \in H : g h g^{-1} \in H
+\end{equation}
+
+Ma trận chuyển cơ sở trong không gian vector $V$ có chiều $n$:
+\[
+[v]_{\mathcal{B}} = P_{\mathcal{B} \to \mathcal{B}'} [v]_{\mathcal{B}'} \quad \text{với} \quad P = 
+\begin{bmatrix}
+\langle b_1, b'_1 \rangle & \langle b_1, b'_2 \rangle & \dots \\
+\vdots & \ddots & \vdots \\
+\langle b_n, b'_1 \rangle & \dots & \langle b_n, b'_n \rangle
+\end{bmatrix}
+\]
+
+\newpage
+
+\section{Trang 3: Phương trình vi phân và Biến đổi Integral}
+Đây là thử thách cho Texify về việc nhận diện đạo hàm bậc cao và các ký hiệu biến đổi.
+
+\subsection{Phương trình vi phân đạo hàm riêng (PDE)}
+Xét phương trình truyền nhiệt trong không gian 3 chiều:
+\[
+\frac{\partial u}{\partial t} - \alpha \left( \frac{\partial^2 u}{\partial x^2} + \frac{\partial^2 u}{\partial y^2} + \frac{\partial^2 u}{\partial z^2} \right) = f(x, y, z, t)
+\]
+
+\subsection{Biến đổi Laplace}
+Phép biến đổi Laplace của hàm $f(t)$ được định nghĩa là:
+\[
+\mathcal{L}\{f(t)\} = F(s) = \int_{0}^{\infty} e^{-st} f(t) \, dt
+\]
+Và tính chất đạo hàm:
+\begin{equation}
+\mathcal{L}\{f''(t)\} = s^2 F(s) - s f(0) - f'(0)
+\end{equation}
+
+\newpage
+
+\section{Trang 4: Xác suất thống kê và Tổ hợp}
+Kiểm tra khả năng nhận diện các ký hiệu tổng, tích và các ký hiệu thống kê đặc thù.
+
+\subsection{Phân phối chuẩn (Gaussian)}
+Hàm mật độ xác suất của phân phối chuẩn với kỳ vọng $\mu$ và phương sai $\sigma^2$:
+\[
+f(x | \mu, \sigma^2) = \frac{1}{\sqrt{2\pi\sigma^2}} \exp\left( -\frac{(x - \mu)^2}{2\sigma^2} \right)
+\]
+
+\subsection{Ước lượng tối ưu}
+Công thức Bayes trong xác suất có điều kiện:
+\[
+P(A|B) = \frac{P(B|A) P(A)}{P(B)} = \frac{P(B|A) P(A)}{\sum_{i} P(B|A_i) P(A_i)}
+\]
+
+\section{Kết luận và Tổng kết}
+Đây là đoạn văn bản thuần túy để kiểm tra xem HeySeen có bị "loạn" khi chuyển từ chế độ Math Mode sang Text Mode hay không. Nếu Texify cố gắng suy luận (inference) đoạn này thành toán học, đó là một lỗi "False Positive".
+
+Hệ thống OCR lý tưởng phải phân biệt được đâu là ngôn ngữ tự nhiên và đâu là ngôn ngữ ký hiệu. Kết thúc bài test với một công thức đơn giản cuối trang:
+\[ E = mc^2 \]
+
+\end{document}

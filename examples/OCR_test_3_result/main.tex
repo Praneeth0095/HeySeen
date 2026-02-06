@@ -1,0 +1,115 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{graphicx}
+\usepackage{geometry}
+\geometry{margin=2.5cm}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt}
+
+
+\begin{document}
+
+
+% Page 1
+\section*{HeySeen Benchmark: Geometric \& Structural Stress Test}
+
+\section{003 HeySeen Laboratory - Stress Scenario}
+
+\section{2026 Ngày 4 tháng 2 năm}
+
+1 Test1: Hình học và Tọa độ (TikZ) Thử thách lớn nhất cho OCR là tách biệt chữ số trong hình vẽ. Texify phải nhận diện được các nhãn (labels) mà không làm hỏng cấu trúc vector.
+
+$P(r,\theta)$
+
+x
+
+1
+
+Hệ tọa độ cực liên hệ với tọa độ Descartes qua:
+
+
+\[ \begin{cases} x = r \cos \theta \\ y = r \sin \theta \end{cases} \implies x^2 + y^2 = r^2 \]
+
+
+Test2: Ma trận khối và Ký hiệu rỗng $\mathbf{2}$ Sử dụng các ma trận có phân cách (partitioned matrices). Đây là bài kiểm tra khả năng giữ căn lễ của HeySeen.
+
+
+\[ \mathbf{M} = \begin{bmatrix} 1 & 0 & a \\ 0 & 1 & b \\ \hline 0 & 0 & 1 \end{bmatrix} \otimes \begin{pmatrix} \lambda_1 & \mathbf{0} \\ & \ddots & \\ \mathbf{0} & & \lambda_n \end{pmatrix} \]
+
+
+Tính chất của định thức ma trận khối:
+
+
+\[ \det\begin{pmatrix} A & B \\ 0 & D \end{pmatrix} = \det(A)\det(D) \]
+
+
+(1)
+
+
+\newpage
+
+% Page 2
+Test 3: Hóa học và Chỉ số phức tạp Texify đôi khi nhầm lẫn giữa công thức toán và công thức hóa học. Hãy xem HeySeen xử lý gói 'mhchem' như thế nào.
+
+3.1 Phản ứng nhiệt nhôm
+
+$2 \text{Al} + \text{Fe}_2\text{O}_3 \xrightarrow{\text{t}^o} \text{Al}_2\text{O}_3 + 2 \text{Fe}$
+
+Cấu tạo hữu cơ và Cân bằng 3.2 Xét cân bằng phân ly của axit yếu trong dung dịch:
+
+$\text{CH}_3\text{COOH} \Longrightarrow \text{CH}_3\text{COO}^- + \text{H}^+ \quad K_a = \frac{[\text{CH}_3\text{COO}^-][\text{H}^+]}{[\text{CH}_4\text{COOH}]}$
+
+Test 4: Bảng biểu và Thống kê 4 Đánh giá khả năng OCR bảng (Table recognition) - một trong những điểm yếu cố hữu của Marker nếu không được tinh chỉnh.
+
+Bảng 1: Dữ liệu thực nghiệm HeySeen Tham số $\alpha$ Giá trị $\beta$ Sai số $(\sigma)$ Mẫu thử 
+\[ 1.25\times 10^{-3} \]
+
+
+0.982
+
+$Test_01$
+
+$\pm 0.01$
+
+
+\[ \int_{i=1}^{n} \frac{1}{i} \]
+
+\[ \int \sin(x) dx \]
+
+
+\begin{itemize}
+  \item 
+\end{itemize}
+
+$Test_02$
+
+$\pm 0.05$ 0.000
+
+$Test_03$
+
+N/A
+
+Test 5: Ký hiệu Tổng quát và Mã giả (Pseudocode) 5 Cuối cùng, thử thách khả năng đọc các ký hiệu toán rời rạc lồng trong các bước thuật toán.
+
+\begin{itemize}
+  \item ước 1: Khởi tạo tập hợp $S = \{x \in \mathbb{R} \mid |x| < \infty\}.$
+\end{itemize}
+
+\textbf{Bước 2:} Duyệt $\forall \omega \in \Omega$, tính kỳ vọng:
+
+
+\[ E[\omega] = \sum_{j=1}^{m} p_j \cdot u(\omega_j) \]
+
+
+\begin{itemize}
+  \item ước 3: Nếu $E[\omega] > \tau$, thực hiện phép gán $x \leftarrow x + \Delta x$.
+\end{itemize}
+
+Trạng thái hệ thống được mô tả bởi toán tử Hamiltonian:
+
+$\hat{H}\Psi = E\Psi$ với $\hat{H} = -\frac{\hbar^2}{2m}\nabla^2 + V(\mathbf{r})$
+
+
+\newpage
+
+\end{document}

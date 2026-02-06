@@ -1,0 +1,66 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage[left=2cm,right=2cm,top=2cm,bottom=2cm]{geometry}
+\usepackage{amsmath, amssymb}
+
+\begin{document}
+
+\section*{Trang 1: Đánh giá khả năng nhận diện Giải tích}
+
+Giả sử hàm số $f(x)$ liên tục trên đoạn $[a, b]$, ta xét định nghĩa của tích phân xác định thông qua tổng Riemann. Khả năng OCR cần phân biệt được chỉ số dưới $i$ và các ký tự Hy Lạp:
+
+\[
+\int_{a}^{b} f(x) \, dx = \lim_{n \to \infty} \sum_{i=1}^{n} f(\xi_i) \Delta x_i
+\]
+
+Tiếp theo, hãy kiểm tra khả năng xử lý các phân số tầng (nested fractions) và căn thức lồng nhau, vốn là "khúc xương" khó nhằn đối với các dòng lệnh AI thông thường:
+
+\[
+\phi = 1 + \frac{1}{1 + \frac{1}{1 + \frac{1}{1 + \dots}}} = \sqrt{1 + \sqrt{1 + \sqrt{1 + \dots}}}
+\]
+
+Một ví dụ về chuỗi Fourier để kiểm tra việc nhận diện các ký hiệu tích phân và hàm lượng giác:
+
+\[
+f(x) = \frac{a_0}{2} + \sum_{n=1}^{\infty} \left( a_n \cos\left(\frac{n\pi x}{L}\right) + b_n \sin\left(\frac{n\pi x}{L}\right) \right)
+\]
+
+Trong đó, hệ số $a_n$ được tính bởi:
+\begin{equation}
+a_n = \frac{1}{L} \int_{-L}^{L} f(x) \cos\left(\frac{n\pi x}{L}\right) dx
+\end{equation}
+
+\section*{Trang 2: Đại số tuyến tính và Hệ phương trình}
+
+Khả năng OCR cần được kiểm tra với các Ma trận (Matrix). AI thường mắc lỗi gộp các cột lại với nhau hoặc làm mất định dạng bao quanh:
+
+\[
+A = \begin{pmatrix}
+a_{11} & a_{12} & \cdots & a_{1n} \\
+a_{21} & a_{22} & \cdots & a_{2n} \\
+\vdots & \vdots & \ddots & \vdots \\
+a_{m1} & a_{m2} & \cdots & a_{mn}
+\end{pmatrix}
+\]
+
+Tính định thức của ma trận $2 \times 2$ lồng trong các biểu thức khác:
+\[
+\det(A) = \left| \begin{matrix} a & b \\ c & d \end{matrix} \right| = ad - bc
+\]
+
+Cuối cùng là hệ phương trình có dấu ngoặc nhọn lớn và các điều kiện phân mảnh, đây là bài test tốt nhất cho việc nhận diện cấu trúc logic:
+
+\[
+f(n) = 
+\begin{cases} 
+n/2 & \text{nếu } n \equiv 0 \pmod{2} \\
+3n+1 & \text{nếu } n \equiv 1 \pmod{2}
+\end{cases}
+\]
+
+Một biểu thức tổ hợp phức tạp để chốt lại bài kiểm tra:
+\[
+\binom{n}{k} = \frac{n!}{k!(n-k)!} = \prod_{i=1}^{k} \frac{n-i+1}{i}
+\]
+
+\end{document}

@@ -1,0 +1,61 @@
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "heyseen"
+version = "0.1.0"
+description = "Offline PDF to LaTeX converter optimized for Apple Silicon"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [
+    {name = "HeySeen Team"}
+]
+keywords = ["pdf", "latex", "ocr", "apple-silicon", "offline"]
+dependencies = [
+    "torch>=2.10.0",
+    "torchvision>=0.25.0",
+    "marker-pdf>=1.10.0",
+    "surya-ocr>=0.17.0",
+    "pypdfium2>=4.30.0",
+    "Pillow>=10.0.0",
+    "tqdm>=4.67.0",
+    "rich>=14.0.0",
+    "click>=8.3.0",
+    "pyyaml>=6.0.0",
+]
+
+[tool.setuptools]
+packages = ["heyseen", "heyseen.core", "heyseen.models", "heyseen.utils", "heyseen.cli"]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=9.0.0",
+    "black>=26.0.0",
+    "isort>=7.0.0",
+    "mypy>=1.19.0",
+]
+
+[project.scripts]
+heyseen = "heyseen.cli.main:cli"
+
+[tool.black]
+line-length = 100
+target-version = ['py310', 'py311', 'py312']
+
+[tool.isort]
+profile = "black"
+line_length = 100
+
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
