@@ -47,12 +47,30 @@ class TableRecognizer:
             LaTeX tabular code
         """
         if not self.model:
+            print("Warning: Table Transformer model not available.")
+
+    def process_table(self, image: Image.Image, ocr_callback: Callable[[Image.Image], str]) -> str:
+        """
+        Process a table image Crop -> LaTeX code.
+        
+        Args:
+            image: PIL Image of the table region
+            ocr_callback: Function that takes an image crop and returns text content
+            
+        Returns:
+            LaTeX tabular code
+        """
+        if not self.model:
             return "% Table recognition unavailable\n"
+        
+        # Debug: Print image size
+        # print(f"DEBUG: Processing table image size: {image.size}")
 
         # 1. Structure Recognition
         cells = self._detect_structure(image)
         if not cells:
-            return "% Table structure detection failed\n"
+            # print("DEBUG: No cells detected")
+            return "" # Return empty to trigger fallback? Or return comment?
             
         # 2. OCR Content for each cell
         # Combine cell crops into batches? For now, simple loop
@@ -65,23 +83,31 @@ class TableRecognizer:
                 min(image.width, int(cell.bbox[2])),
                 min(image.height, int(cell.bbox[3]))
             )
-            # Add small padding/margin?
             
+            # Avoid invalid crops
             if crop_box[2] <= crop_box[0] or crop_box[3] <= crop_box[1]:
                 continue
+            
+            # Pad slightly to capture border text? 
+            # Actually standard TATR boxes are usually tight.
                 
             cell_img = image.crop(crop_box)
             # Run OCR
             cell.content = ocr_callback(cell_img).strip()
+            # print(f"DEBUG: Cell ({cell.row_idx}, {cell.col_idx}): '{cell.content}'")
             
         # 3. Generate LaTeX
         return self._build_latex(cells)
 
     def _detect_structure(self, image: Image.Image) -> List[TableCell]:
         """Run TATR inference and parse results into TableCell objects"""
+        if image.mode != "RGB":
+            image = image.convert("RGB")
+            
         w, h = image.size
         
         # Preprocess
+        # encoding usually handles resizing and normalization
         inputs = self.processor(images=image, return_tensors="pt").to(self.device)
         
         # Inference
@@ -89,17 +115,12 @@ class TableRecognizer:
             outputs = self.model(**inputs)
             
         # Post-process
-        # TATR classes: table, column, row, table header, table projected row header, spanning cell...?
-        # Actually structure-recognition model classes are:
-        # 0: table
-        # 1: column
-        # 2: row
-        # 3: table header
-        # 4: projected row header
-        # 5: spanning cell
+        # TATR structure classes:
+        # table, table column, table row, table column header, table projected row header, spanning cell
         
         target_sizes = torch.tensor([image.size[::-1]])
-        results = self.processor.post_process_object_detection(outputs, threshold=0.7, target_sizes=target_sizes)[0]
+        # Lower threshold substantially for debugging
+        results = self.processor.post_process_object_detection(outputs, threshold=0.1, target_sizes=target_sizes)[0]
         
         scores = results["scores"]
         labels = results["labels"]
@@ -107,44 +128,49 @@ class TableRecognizer:
         
         rows = []
         cols = []
-        cells = [] # We might infer cells from row/col intersections if TATR doesn't give them directly
         
-        # TATR structure recognition is often used to get Rows and Columns, then intersect.
-        
+        # print("DEBUG: TATR Detections:")
         for score, label, box in zip(scores, labels, boxes):
             box = box.tolist()
             lbl = label.item()
             label_name = self.model.config.id2label[lbl]
+            # logger.info(f"TATR Det: {label_name} ({score:.2f})")
             
             if label_name == "table row":
                 rows.append(box)
             elif label_name == "table column":
                 cols.append(box)
-            # We can also use spanning cells if detected
-            
+                
         # Sort rows by Y, Cols by X
+        # Row boxes: [x0, y0, x1, y1]. Sort by average Y.
         rows.sort(key=lambda b: (b[1] + b[3])/2)
+        
+        # Col boxes: [x0, y0, x1, y1]. Sort by average X.
         cols.sort(key=lambda b: (b[0] + b[2])/2)
         
+        # logger.info(f"TATR: Found {len(rows)} rows and {len(cols)} columns in image size {image.size}")
+        
         if not rows or not cols:
-             # Fallback?
              return []
              
         # Extract cells from intersections
         detected_cells = []
         for r_idx, r_box in enumerate(rows):
             for c_idx, c_box in enumerate(cols):
-                # Intersection box
-                # x0 = max(r_x0, c_x0) ... wait, rows span width, cols span height
+                # Intersection logic
+                # Row spans width, Col spans height.
+                # Row Box Y range: [r_y0, r_y1]
+                # Col Box X range: [c_x0, c_x1]
                 
-                # Row is usually (0, y0, W, y1) approx
-                # Col is usually (x0, 0, x1, H) approx
-                
-                # Intersection
+                # The cell box is effectively the intersection of these ranges
                 x0 = c_box[0]
-                y0 = r_box[1]
                 x1 = c_box[2]
+                y0 = r_box[1]
                 y1 = r_box[3]
+                
+                # However, strict intersection might be safer if they overlap coordinates?
+                # Usually row box covers full width and col box covers full height.
+                # So taking X from col and Y from row is the standard way.
                 
                 detected_cells.append(TableCell(
                     bbox=[x0, y0, x1, y1],

@@ -157,10 +157,16 @@ class ContentExtractor:
              # Try TATR first
              if self.table_recognizer and self.table_recognizer.model:
                  try:
+                     print(f"DEBUG: Processing Table Block {block.block_id}")
                      content.latex = self.table_recognizer.process_table(
                          block_image, 
                          ocr_callback=self._ocr_cell_callback
                      )
+                     # Fallback if TATR returns empty result
+                     if not content.latex:
+                         print(f"DEBUG: TATR returned empty. Falling back to image for {block.block_id}")
+                         content.image_path = self._save_image(block_image, block, output_dir)
+                         
                  except Exception as e:
                      logger.warning(f"Table recognition failed: {e}. Falling back to image.")
                      content.image_path = self._save_image(block_image, block, output_dir)
