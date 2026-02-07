@@ -92,8 +92,8 @@
                 </div>
             </header>
 
-        <!-- Upload Card -->
-        <div class="bg-white rounded-xl shadow-lg p-8 mb-8">
+            <!-- Upload Card -->
+            <div class="bg-white rounded-xl shadow-lg p-8 mb-8">
             <div id="drop-zone" class="border-2 border-dashed border-gray-300 rounded-lg p-12 text-center hover:border-blue-500 transition cursor-pointer bg-gray-50">
                 <input type="file" id="file-input" class="hidden" accept=".pdf">
                 <div class="text-gray-500">
@@ -120,19 +120,19 @@
                     Convert to LaTeX
                 </button>
             </div>
-        </div>
+            </div>
 
-        <!-- Progress Status -->
-        <div id="status-card" class="hidden bg-white rounded-xl shadow-lg p-6 mb-8 border-l-4 border-blue-500">
+            <!-- Progress Status -->
+            <div id="status-card" class="hidden bg-white rounded-xl shadow-lg p-6 mb-8 border-l-4 border-blue-500">
             <h3 class="text-lg font-semibold text-gray-800 mb-2">Processing Status</h3>
             <div class="w-full bg-gray-200 rounded-full h-4 mb-2">
                 <div id="progress-bar" class="bg-blue-600 h-4 rounded-full transition-all duration-500" style="width: 0%"></div>
             </div>
             <p id="status-text" class="text-gray-600 text-sm font-mono">Initializing...</p>
-        </div>
+            </div>
 
-        <!-- Result Card -->
-        <div id="result-card" class="hidden bg-green-50 rounded-xl shadow border border-green-200 p-8 text-center">
+            <!-- Result Card -->
+            <div id="result-card" class="hidden bg-green-50 rounded-xl shadow border border-green-200 p-8 text-center">
             <div class="mb-4">
                 <i class="fa-solid fa-check-circle text-5xl text-green-500"></i>
             </div>
@@ -144,15 +144,15 @@
             <div class="mt-4">
                  <button onclick="location.reload()" class="text-gray-500 underline text-sm hover:text-gray-700">Convert Another File</button>
             </div>
-        </div>
-        
-        <!-- Error Card -->
-        <div id="error-card" class="hidden bg-red-50 rounded-xl shadow border border-red-200 p-6 text-center">
+            </div>
+            
+            <!-- Error Card -->
+            <div id="error-card" class="hidden bg-red-50 rounded-xl shadow border border-red-200 p-6 text-center">
             <i class="fa-solid fa-circle-exclamation text-3xl text-red-500 mb-2"></i>
             <h3 class="text-lg font-bold text-red-800">Error</h3>
             <p id="error-text" class="text-red-600 text-sm"></p>
             <button onclick="location.reload()" class="mt-4 text-red-700 underline text-sm">Try Again</button>
-        </div>
+            </div>
         </div>
     </div>
 
