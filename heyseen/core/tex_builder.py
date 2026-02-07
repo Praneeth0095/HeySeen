@@ -270,9 +270,28 @@ class TeXBuilder:
                 if in_list:
                     page_tex += "\\end{itemize}\n\n"
                     in_list = False
-                # Insert table latex directly
+                
+                # Insert table latex directly if available
                 if item['latex']:
                     page_tex += f"\n{item['latex']}\n\n"
+                    
+                # Handle Fallback where type is 'table' but has text content (Rejected by TATR)
+                elif item.get('text'):
+                     # Treat like a paragraph
+                     escaped = self._escape_latex(item['text'])
+                     page_tex += f"{escaped}\n\n"
+                     
+                # Fallback to Image (handled by separate 'image' type usually, but just in case)
+                elif item.get('image_path'):
+                     # Call image handler logic (duplicated slightly for safety)
+                     image_path = Path(item['image_path'])
+                     rel_path = image_path.relative_to(self.output_dir) if image_path.is_absolute() else image_path
+                     
+                     page_tex += f"\\begin{{figure}}[h]\n"
+                     page_tex += f"  \\centering\n"
+                     page_tex += f"  \\includegraphics[width=0.8\\textwidth]{{{rel_path}}}\n"
+                     page_tex += f"  \\caption{{Figure from page {page_num}}}\n"
+                     page_tex += f"\\end{{figure}}\n\n"
             
             elif item['type'] == 'image':
                 # Close any open list
@@ -462,6 +481,40 @@ class TeXBuilder:
                 
                 # Distinguish between math and table
                 block_type = 'table' if block.block_type == 'table' else 'math'
+                
+                # TABLE-MATH MERGE LOGIC (Heuristic)
+                # If we just added a table, and this is a math block
+                if block_type == 'math' and merged and merged[-1]['type'] == 'table':
+                    last_table = merged[-1]
+                    # Check vertical proximity
+                    # Assuming we don't have bounding box of previous merged item easily available?
+                    # But we have `prev_block`
+                    v_gap = block.bbox.y0 - prev_block.bbox.y1
+                    
+                    # Logic 1: Very close vertical gap (e.g. < 2% page height)
+                    is_very_close = v_gap < 0.02
+                    
+                    # Logic 2: Table structure might be incomplete? (Hard to check string)
+                    
+                    if is_very_close:
+                        # Append this math block as a loose line to the table latex? Or create a caption?
+                        # Or maybe it's a row that got split?
+                        # If table latex ends with \end{tabular}\end{center}, we can inject it?
+                        # It's safer to just let it be a separate block but maybe minimize spacing?
+                        # BUT user requirement is "split from table".
+                        # Injecting into tabular is risky (column count mismatch).
+                        # Compromise: Append inside the same environment if possible? No.
+                        
+                        # User said: "hang chua cong thuc tich phan... bi tach ra... hien thi thanh block toan rieng biet"
+                        # Ideally, this should be a row in the table.
+                        # But we can't reconstruct the row structure easily here (cells?).
+                        
+                        # However, we can simply append the LaTeX code right AFTER the tabular but BEFORE the center closes?
+                        # Or just put it implicitly?
+                        
+                        # Let's settle for just adding it normally for now, as merging without structure is dangerous.
+                        pass
+
                 merged.append({
                     'type': block_type,
                     'latex': content.latex

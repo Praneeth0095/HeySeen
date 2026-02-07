@@ -101,20 +101,6 @@ cd output && pdflatex main.tex
 
 ---
 
-## 🎯 So sánh với Mathpix
-
-| Tiêu chí | HeySeen | Mathpix |
-|----------|---------|---------|
-| **Offline & Bảo mật** | ✅ Hoàn toàn offline | ❌ Cần internet |
-| **Chi phí** | ✅ Miễn phí | ❌ $4.99+/tháng |
-| **Độ chính xác** | ⚠️ 75-90% | ✅ 90-95% |
-| **Platform** | 🍎 macOS (Apple Silicon) | 🌐 Cross-platform |
-| **Tùy biến** | ✅ Open source | ❌ Closed |
-| **Batch processing** | ✅ Unlimited | ❌ Giới hạn quota |
-
-**Kết luận**: HeySeen phù hợp cho **offline + privacy + bulk processing**, Mathpix tốt hơn về **độ chính xác và UX**.
-
----
 
 ## 🛠️ Production Deployment
 
@@ -134,7 +120,7 @@ launchctl list | grep heyseen
 
 - **Backend Log**: `tail -f server_data/server.log`
 - **Local URL**: http://localhost:5555
-- **Public URL**: https://heyseen.truyenthong.edu.vn (nếu có setup Cloudflare Tunnel)
+- **Public URL**: https://heyseen.truyenthong.edu.vn (Cloudflare Tunnel)
 
 Xem chi tiết: `./deploy/health_check.sh`
 

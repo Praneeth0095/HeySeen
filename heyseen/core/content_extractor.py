@@ -136,14 +136,6 @@ class ContentExtractor:
         x0, y0, x1, y1 = block.bbox.to_pixels(image.width, image.height)
         block_image = image.crop((x0, y0, x1, y1))
         
-        print(f"DEBUG: Processing Block {block.block_id} [{block.block_type}]")
-
-        content = ExtractedContent(
-            block_id=block.block_id,
-            block_type=block.block_type,
-            confidence=block.confidence,
-        )
-        
         # Route to appropriate extractor
         if block.block_type in ["text", "title", "caption", "section", "subsection", "list-item"]:
             # Pass bbox in pixel coordinates for recognition
@@ -166,8 +158,16 @@ class ContentExtractor:
                      )
                      # Fallback if TATR returns empty result
                      if not content.latex:
-                         print(f"DEBUG: TATR returned empty. Falling back to image for {block.block_id}")
-                         content.image_path = self._save_image(block_image, block, output_dir)
+                         # Fallback to Text extraction for the whole block
+                         text = self._extract_text(block_image, [0, 0, block_image.width, block_image.height])
+                         content.text = text
+                         # IMPORTANT: If text fallback is used, we must ensure TexBuilder sees it.
+                         # TexBuilder checks content.latex for tables. If empty, it looks for content.text via our new patch 
+                         # OR we can change the block type to "paragraph" or "text" here?
+                         # Changing type is safer for merging logic in TexBuilder.
+                         # But block_type is passed from layout, usually immutable in ExtractedContent?
+                         # Let's try forcing it.
+                         content.block_type = "text" # Force it to act like text
                          
                  except Exception as e:
                      logger.warning(f"Table recognition failed: {e}. Falling back to image.")
@@ -183,8 +183,19 @@ class ContentExtractor:
         """Helper for TableRecognizer to OCR individual cells"""
         w, h = cell_image.size
         if w == 0 or h == 0: return ""
-        # Use existing text extraction on the crop
-        return self._extract_text(cell_image, [0, 0, w, h])
+        
+        # 1. Try Text Extraction
+        text = self._extract_text(cell_image, [0, 0, w, h])
+        
+        # 2. Clean up tags
+        import re
+        # Remove <math> tags but keep content if it's not structural noise
+        # Actually <math> tags often wrap latex content we WANT. 
+        # e.g. <math>\alpha</math> -> \alpha
+        text = re.sub(r'<math[^>]*>', '', text)
+        text = re.sub(r'</math>', '', text)
+        
+        return text.strip()
 
     def _extract_text(self, image: Image.Image, bbox: List[int]) -> str:
         """Extract text using Surya recognition"""
@@ -667,7 +678,26 @@ class ContentExtractor:
                      block_image = image.crop((x0, y0, x1, y1))
                      math_tasks.append((i, block_image, block.block_id, "text_math"))
                      
-            elif block.block_type in ["figure", "table"]:
+            elif block.block_type == "table":
+                 block_image = image.crop((x0, y0, x1, y1))
+                 
+                 # Try TATR if available
+                 if self.table_recognizer and self.table_recognizer.model:
+                     try:
+                         # print(f"DEBUG: Processing Table Block {block.block_id}")
+                         content.latex = self.table_recognizer.process_table(
+                             block_image, 
+                             ocr_callback=self._ocr_cell_callback
+                         )
+                         if not content.latex:
+                             content.image_path = self._save_image(block_image, block, output_dir)
+                     except Exception as e:
+                         # logger.warning(f"Table recognition failed for {block.block_id}: {e}")
+                         content.image_path = self._save_image(block_image, block, output_dir)
+                 else:
+                     content.image_path = self._save_image(block_image, block, output_dir)
+
+            elif block.block_type == "figure":
                 block_image = image.crop((x0, y0, x1, y1))
                 content.image_path = self._save_image(block_image, block, output_dir)
 
