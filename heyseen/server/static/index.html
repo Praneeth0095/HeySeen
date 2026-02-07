@@ -21,53 +21,18 @@
     </style>
 </head>
 <body class="bg-gray-50">
-    <!-- Navigation Bar -->
-    <nav class="bg-white shadow-sm border-b border-gray-200">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center h-16">
-                <!-- Logo -->
-                <div class="flex items-center space-x-3">
-                    <i class="fa-solid fa-eye text-blue-600 text-2xl"></i>
-                    <span class="text-xl font-bold text-gray-800">HeySeen</span>
+    <!-- Header -->
+    <header class="bg-white shadow-sm border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <div class="flex items-center space-x-4">
+                <i class="fa-solid fa-eye text-blue-600 text-3xl"></i>
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-800">HeySeen</h1>
+                    <p class="text-sm text-gray-600">PDF to LaTeX Converter with AI-Powered Math Recognition</p>
                 </div>
-                
-                <!-- Navigation Links -->
-                <div class="hidden md:flex items-center space-x-6">
-                    <a href="https://truyenthong.edu.vn/" target="_blank" class="text-gray-700 hover:text-blue-600 transition">
-                        Home
-                    </a>
-                    <a href="https://heytex.truyenthong.edu.vn/" target="_blank" class="text-gray-700 hover:text-blue-600 transition">
-                        HeyTeX
-                    </a>
-                    <a href="https://aithink.truyenthong.edu.vn/" target="_blank" class="text-gray-700 hover:text-blue-600 transition">
-                        AIThink
-                    </a>
-                    <a href="https://heyphom.truyenthong.edu.vn/" target="_blank" class="text-gray-700 hover:text-blue-600 transition">
-                        HeyPhom
-                    </a>
-                    <a href="https://github.com/phucdhh/HeySeen" target="_blank" class="text-gray-700 hover:text-blue-600 transition">
-                        <i class="fa-brands fa-github mr-1"></i>GitHub
-                    </a>
-                    <a href="mailto:ndmphuc@hueuni.edu.vn" class="text-gray-700 hover:text-blue-600 transition">
-                        Contact
-                    </a>
-                </div>
-                
-                <!-- Mobile Menu Button -->
-                <button id="mobile-menu-btn" class="md:hidden text-gray-700">
-                    <i class="fa-solid fa-bars text-xl"></i>
-                </button>
-            </div>
-            
-            <!-- Mobile Menu -->
-            <div id="mobile-menu" class="hidden md:hidden py-4 border-t border-gray-200">
-                <a href="https://truyenthong.edu.vn/" target="_blank" class="block py-2 text-gray-700 hover:text-blue-600 transition">Home</a>
-                <a href="https://heytex.truyenthong.edu.vn/" target="_blank" class="block py-2 text-gray-700 hover:text-blue-600 transition">HeyTeX</a>
-                <a href="https://github.com/phucdhh/HeySeen" target="_blank" class="block py-2 text-gray-700 hover:text-blue-600 transition">GitHub</a>
-                <a href="mailto:ndmphuc@hueuni.edu.vn" class="block py-2 text-gray-700 hover:text-blue-600 transition">Contact</a>
             </div>
         </div>
-    </nav>
+    </header>
 
     <!-- Main Content -->
     <div class="content-wrapper">
@@ -81,13 +46,13 @@
                 <p class="text-xl text-gray-600 mb-4">Offline PDF to LaTeX Converter with AI-Powered Math Recognition</p>
                 <div class="flex justify-center items-center space-x-6 text-sm text-gray-500">
                     <span class="flex items-center">
-                        <i class="fa-solid fa-lock mr-2"></i>100% Offline
+                        <i class="fa-solid fa-lock mr-3"></i>100% Offline
                     </span>
                     <span class="flex items-center">
-                        <i class="fa-brands fa-apple mr-2"></i>Apple Silicon
+                        <i class="fa-brands fa-apple mr-3"></i>Apple Silicon
                     </span>
                     <span class="flex items-center">
-                        <i class="fa-solid fa-code mr-2"></i>Open Source
+                        <i class="fa-solid fa-code mr-3"></i>Open Source
                     </span>
                 </div>
             </div>
@@ -160,10 +125,16 @@
     <footer class="bg-white border-t border-gray-200">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <div class="text-center">
-                <p class="text-gray-600 mb-2">
-                    <strong>HeySeen</strong> - Offline PDF to LaTeX Converter
-                </p>
-                <p class="text-sm text-gray-500 mb-4">
+                <div class="flex justify-center items-center space-x-6 mb-4 text-sm">
+                    <a href="https://truyenthong.edu.vn/" target="_blank" class="text-gray-600 hover:text-blue-600 transition">Home</a>
+                    <a href="https://heytex.truyenthong.edu.vn/" target="_blank" class="text-gray-600 hover:text-blue-600 transition">HeyTeX</a>
+                    <a href="https://aithink.truyenthong.edu.vn/" target="_blank" class="text-gray-600 hover:text-blue-600 transition">AIThink</a>
+                    <a href="https://heysym.truyenthong.edu.vn/" target="_blank" class="text-gray-600 hover:text-blue-600 transition">HeySym</a>
+                    <a href="https://heyphom.truyenthong.edu.vn/" target="_blank" class="text-gray-600 hover:text-blue-600 transition">HeyPhom</a>
+                    <a href="https://github.com/phucdhh/HeySeen" target="_blank" class="text-gray-600 hover:text-blue-600 transition">GitHub</a>
+                    <a href="mailto:ndmphuc@hueuni.edu.vn" class="text-gray-600 hover:text-blue-600 transition">Contact</a>
+                </div>
+                <p class="text-sm text-gray-500 mb-2">
                     Developed by <a href="https://www.ganjingworld.com/@ndmphuc" target="_blank" class="text-blue-600 hover:underline">Nguyễn Đăng Minh Phúc</a>
                 </p>
                 <p class="text-sm text-gray-500">
@@ -312,11 +283,7 @@
             convertBtn.classList.remove('opacity-50', 'cursor-not-allowed');
         }
         
-        // Mobile menu toggle
-        document.getElementById('mobile-menu-btn').addEventListener('click', () => {
-            const mobileMenu = document.getElementById('mobile-menu');
-            mobileMenu.classList.toggle('hidden');
-        });
+
     </script>
 </body>
 </html>
