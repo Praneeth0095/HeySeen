@@ -18,7 +18,7 @@ from surya.layout import LayoutPredictor
 from surya.foundation import FoundationPredictor
 
 
-BlockType = Literal["text", "math", "figure", "table", "title", "section", "subsection", "caption", "list-item"]
+BlockType = Literal["text", "math", "figure", "table", "title", "section", "subsection", "subsubsection", "caption", "list-item"]
 
 
 @dataclass
@@ -140,12 +140,13 @@ class LayoutAnalyzer:
         """
         Detect layout blocks in a single image.
         
-        Uses a two-pass approach:
-        1. LayoutPredictor: Detects semantic regions (Title, Table, Figure, Text Block)
-        2. DetectionPredictor: Detects individual text lines
-        
-        Then assigns text lines to layout regions to preserve structure.
+        Use Safe Zone filter to remove Headers (Top 5%) and Footers (Bottom 5%).
         """
+        # 0. Define Safe Zone (0.05 - 0.95)
+        # -------------------------------------------
+        SAFE_TOP = 0.05
+        SAFE_BOTTOM = 0.95
+        
         # 1. Run Layout Prediction (Semantic Regions)
         # -------------------------------------------
         try:
@@ -200,19 +201,18 @@ class LayoutAnalyzer:
         # ----------------------
         
         # Mappings from Surya labels to HeySeen types
-        # Keep granular types for structure extraction
         label_map = {
             "Caption": "caption",
             "Footnote": "text",
             "Formula": "math",
-            "List-item": "list-item",  # Preserve for itemize/enumerate
-            "Page-footer": "text",  # Skip or mark separately
+            "List-item": "list-item",
+            "Page-footer": "text",
             "Page-header": "text",
             "Picture": "figure",
-            "Section-header": "section",  # Map to section (not title!)
+            "Section-header": "section",
             "Table": "table",
             "Text": "text",
-            "Title": "title",  # Document title only
+            "Title": "title",
         }
 
         layout_boxes = []
@@ -220,26 +220,37 @@ class LayoutAnalyzer:
             for b in layout_res.bboxes:
                 norm_bbox = to_norm(b.bbox)
                 
-                # Filter headers/footers here if desired, or mark them
-                # For Phase 2.3, we detect but might want to exclude headers/footers from flow?
-                # Let's keep them but label correctly. content_extractor might simple OCR them.
+                # Spatial Filtering (Phase 2.5)
+                # Ignore blocks at very Top and Bottom (Headers/Footers)
+                # Unless they are specifically essential types (Title, Figure)
+                # Note: Titles can be at top, so check label.
                 
                 label = getattr(b, "label", "Text")
-                # Handle standard label names
-                block_type = label_map.get(label, "text")
                 
-                # Skip Headers/Footers for now if user wants clean content?
-                # For strictly recreating the PDF, we might want them.
-                # But typically they are noise. Let's tag them 'text' but maybe area heuristic applies.
-                # Actually, let's map them to specific custom types if we had them.
-                # Since BlockType is restricted, map to "text" but we can check position later.
+                # Filter Logic:
+                # 1. Very small height (< 3%) at top/bottom edges
+                is_top_edge = norm_bbox.y0 < 0.03
+                is_bottom_edge = norm_bbox.y1 > 0.97
+                
+                # 2. Skip if explicitly labeled as Footer (Header might be valid Title/Section)
+                if label in ["Page-footer"]:
+                    continue
+
+                # 3. Spatial Skip: If Text/Number at safe zone bounds
+                if (is_top_edge or is_bottom_edge) and label == "Text":
+                     # Likely page number or running header
+                     # Only skip if VERY small (likely noise/page num)
+                     if (norm_bbox.y1 - norm_bbox.y0) < 0.015:
+                         continue
+                
+                block_type = label_map.get(label, "text")
                 
                 layout_boxes.append({
                     "bbox": norm_bbox,
                     "type": block_type,
-                    "raw_label": label,  # Preserve original label
+                    "raw_label": label,
                     "lines": [],
-                    "font_size": self._estimate_font_size(norm_bbox),  # Estimate from bbox height
+                    "font_size": self._estimate_font_size(norm_bbox),
                 })
 
         # 3. Assign Text Lines to Layout Boxes
@@ -476,22 +487,24 @@ class LayoutAnalyzer:
                     # 1. Be stricter about Title (must be significantly larger or bold+large)
                     # 2. Be more careful with Section vs Text (avoid classifying short bold phrases as section if they continue a sentence)
                     
-                    if rel_size > 1.5:
+                    # Revised Heuristics
+                    
+                    if rel_size > 2.0: # Very large
                          block.block_type = "title"
+                    elif rel_size > 1.4: # Large
+                         # If bold, definitely title/section. If not, maybe just large text?
+                         block.block_type = "section" if block.is_bold else "title"
                     elif rel_size > 1.2 and block.is_bold:
-                         block.block_type = "title"
-                    elif rel_size > 1.1 and block.is_bold:
-                         # Only classify as section if it looks like a header (short enough, not part of valid sentence flow?)
-                         # Text Builder handles flow, here we just label. But "xương" starting with lowercase suggests it's not a section.
-                         # We can't check text content easily here without coupling. 
-                         # But typically sections are not italic.
-                         if not block.is_italic:
-                             block.block_type = "section"
-                    elif block.is_bold and rel_size > 1.05:
-                         # Weak signal for section, check if it's potentially a sub-header
-                         # For now, treat as section if it's at start of line? 
-                         # Using simple threshold:
                          block.block_type = "section"
+                    elif rel_size > 1.1 and block.is_bold:
+                         block.block_type = "subsection"
+                    elif block.is_bold and rel_size > 1.05:
+                         block.block_type = "subsubsection"
+                    elif block.is_bold and rel_size > 0.95:
+                         # Likely a run-in heading or paragraph title
+                         # We'll allow it as subsubsection if it's start of line?
+                         # For now, treat as subsubsection to capture structure
+                         block.block_type = "subsubsection"
         except Exception as e:
             if self.verbose:
                 print(f"Warning: Font enrichment failed: {e}")
@@ -598,7 +611,7 @@ class LayoutAnalyzer:
         
         # Rule: At least 30% of rows have multiple columns
         # In loose mode, maybe just 20%?
-        ratio = 0.2 if loose else 0.3
+        ratio = 0.5 if loose else 0.3
         
         if len(rows) > 1 and (multi_col_rows / len(rows)) > ratio:
             # Additional check for loose mode: density

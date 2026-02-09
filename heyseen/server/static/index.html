@@ -4,294 +4,560 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>HeySeen - PDF to LaTeX Converter</title>
-    <link href="tailwind.css" rel="stylesheet">
+    
+    <!-- Favicon - Multiple formats for browser compatibility -->
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <link rel="apple-touch-icon" href="favicon.svg">
+    
+    <!-- Custom HeySeen Styles - Standalone, No Tailwind! -->
+    <link href="heyseen.css?v=2026020905" rel="stylesheet">
+    
+    <!-- Font Awesome Icons -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <style>
-        body {
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
-        }
-        .content-wrapper {
-            flex: 1 0 auto;
-        }
-        footer {
-            flex-shrink: 0;
-        }
-    </style>
 </head>
-<body class="bg-gray-50">
+<body>
     <!-- Header -->
-    <header class="bg-white shadow-sm border-b border-gray-200">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <div class="flex items-center space-x-4">
-                <i class="fa-solid fa-eye text-blue-600 text-3xl"></i>
-                <h1 class="text-2xl font-bold text-gray-800">HeySeen</h1>
-                <span class="text-gray-400">|</span>
-                <p class="text-sm text-gray-600">PDF to LaTeX Converter</p>
+    <header>
+        <div class="container py-4">
+            <div class="header-container">
+                <div class="header-left">
+                    <i class="fa-solid fa-eye" style="color: #FFB800; font-size: 1.875rem;"></i>
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-800">HeySeen</h1>
+                        <p class="text-xs text-gray-600">PDF to LaTeX Converter</p>
+                    </div>
+                </div>
+                
+                <!-- User Avatar & Menu -->
+                <div class="header-right">
+                    <div class="relative">
+                        <div id="user-avatar" class="avatar" title="User Profile">
+                            <span id="avatar-text">G</span>
+                        </div>
+                        
+                        <!-- Dropdown Menu -->
+                        <div id="user-dropdown" class="dropdown-menu">
+                            <div class="dropdown-header">
+                                <div class="flex items-center space-x-3">
+                                    <div class="avatar" style="width: 48px; height: 48px; font-size: 20px;">
+                                        <span id="dropdown-avatar-text">G</span>
+                                    </div>
+                                    <div class="flex-1">
+                                        <div class="font-bold text-white text-base" id="dropdown-name">Guest User</div>
+                                        <div class="text-xs text-white opacity-90" id="dropdown-email">guest@heyseen.local</div>
+                                    </div>
+                                </div>
+                                <div class="mt-3 flex items-center justify-between">
+                                    <span class="role-badge" id="dropdown-role">GUEST</span>
+                                    <div class="text-right">
+                                        <div class="text-xs text-white opacity-75">Limits</div>
+                                        <div class="text-sm font-semibold text-white" id="dropdown-limits">1 page / 1MB</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="dropdown-body">
+                                <button onclick="openProfileModal()" class="dropdown-item">
+                                    <div class="dropdown-item-icon" style="background: linear-gradient(135deg, #FFD700 0%, #FF8C00 100%);">
+                                        <i class="fa-solid fa-user"></i>
+                                    </div>
+                                    <div>
+                                        <div class="dropdown-item-title">My Profile</div>
+                                        <div class="dropdown-item-subtitle">Update your information</div>
+                                    </div>
+                                </button>
+                                <button onclick="openProjectsModal()" class="dropdown-item">
+                                    <div class="dropdown-item-icon" style="background: linear-gradient(135deg, #FFA500 0%, #FF6B35 100%);">
+                                        <i class="fa-solid fa-folder"></i>
+                                    </div>
+                                    <div>
+                                        <div class="dropdown-item-title">My Projects</div>
+                                        <div class="dropdown-item-subtitle" id="dropdown-project-count">0 projects</div>
+                                    </div>
+                                </button>
+                                <button id="admin-menu-btn" onclick="openAdminModal()" class="dropdown-item hidden">
+                                    <div class="dropdown-item-icon" style="background: linear-gradient(135deg, #FFB800 0%, #FF8C00 100%);">
+                                        <i class="fa-solid fa-crown"></i>
+                                    </div>
+                                    <div>
+                                        <div class="dropdown-item-title">Admin Panel</div>
+                                        <div class="dropdown-item-subtitle">Manage users & system</div>
+                                    </div>
+                                </button>
+                            </div>
+                            <div class="dropdown-footer">
+                                <!-- For logged-in users -->
+                                <button id="logout-btn" onclick="performLogout()" class="dropdown-footer-btn hidden">
+                                    <i class="fa-solid fa-right-from-bracket mr-2"></i>
+                                    <span>Logout</span>
+                                </button>
+                                
+                                <!-- For Guest users -->
+                                <div id="guest-buttons" class="guest-button-container hidden">
+                                    <button onclick="openSignUpModal()" class="guest-btn guest-btn-primary">
+                                        <i class="fa-solid fa-user-plus mr-2"></i>
+                                        <span>Sign Up</span>
+                                    </button>
+                                    <button onclick="openLoginModal()" class="guest-btn guest-btn-secondary">
+                                        <i class="fa-solid fa-right-to-bracket mr-2"></i>
+                                        <span>Login</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </header>
 
     <!-- Main Content -->
     <div class="content-wrapper">
-        <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="max-w-3xl mx-auto px-4 py-8">
             <!-- Header -->
             <div class="text-center mb-10">
                 <div class="flex justify-center items-center mb-4">
-                    <i class="fa-solid fa-eye text-blue-600 text-5xl"></i>
+                    <i class="fa-solid fa-eye" style="color: #FFB800; font-size: 3rem;"></i>
                 </div>
                 <h1 class="text-4xl font-bold text-gray-900 mb-3">HeySeen</h1>
                 <p class="text-xl text-gray-600 mb-4">PDF to LaTeX Converter with AI-Powered Math Recognition</p>
-                <div class="flex justify-center items-center space-x-8 text-sm text-gray-500">
+                <div class="flex justify-center items-center flex-wrap space-x-8 text-sm text-gray-500">
                     <span class="flex items-center">
-                        <i class="fa-solid fa-lock" style="margin-right: 20px;"></i>
+                        <i class="fa-solid fa-lock mr-2"></i>
                         <span>100% Offline</span>
                     </span>
                     <span class="flex items-center">
-                        <i class="fa-brands fa-apple" style="margin-right: 20px;"></i>
+                        <i class="fa-brands fa-apple mr-2"></i>
                         <span>Apple Silicon</span>
                     </span>
                     <span class="flex items-center">
-                        <i class="fa-solid fa-code" style="margin-right: 20px;"></i>
+                        <i class="fa-solid fa-code mr-2"></i>
                         <span>Open Source</span>
                     </span>
                 </div>
             </div>
 
             <!-- Upload Card -->
-            <div class="bg-white rounded-xl shadow-lg p-8 mb-8">
-            <div id="drop-zone" class="border-2 border-dashed border-gray-300 rounded-lg p-12 text-center hover:border-blue-500 transition cursor-pointer bg-gray-50">
-                <input type="file" id="file-input" class="hidden" accept=".pdf">
-                <div class="text-gray-500">
-                    <i class="fa-solid fa-cloud-arrow-up text-5xl mb-4 text-gray-400"></i>
-                    <p class="text-lg font-medium">Click to upload or drag PDF here</p>
-                    <p class="text-sm mt-2">Maximum file size: 50MB</p>
+            <div class="upload-card">
+                <div id="drop-zone">
+                    <input type="file" id="file-input" accept=".pdf">
+                    <div class="text-gray-500">
+                        <i class="fa-solid fa-cloud-arrow-up text-5xl mb-4 text-gray-600"></i>
+                        <p class="text-lg font-medium">Click to upload or drag PDF here</p>
+                        <p class="text-sm mt-2" id="upload-limit-text">Maximum file size: 1MB</p>
+                    </div>
+                </div>
+
+                <!-- Options -->
+                <div class="mt-6 flex flex-col gap-3 justify-center">
+                    <label class="flex items-center space-x-2 cursor-pointer justify-center">
+                        <input type="checkbox" id="math-ocr" checked class="form-checkbox">
+                        <span class="text-gray-700">Enable Math</span>
+                    </label>
+                    <label class="flex items-center space-x-2 cursor-pointer justify-center">
+                        <input type="checkbox" id="use-llm" class="form-checkbox">
+                        <span class="text-gray-700">Enable LLM Post-Processing <span class="text-sm text-orange-600">(+25s/page)</span></span>
+                    </label>
+                </div>
+
+                <div class="mt-6 text-center">
+                    <button id="convert-btn">
+                        Convert to LaTeX
+                    </button>
                 </div>
             </div>
 
-            <!-- Options -->
-            <div class="mt-6 flex flex-col gap-3 justify-center">
-                <label class="flex items-center space-x-2 cursor-pointer justify-center">
-                    <input type="checkbox" id="math-ocr" checked class="form-checkbox h-5 w-5 text-blue-600 rounded">
-                    <span class="text-gray-700">Enable Math AI (Texify)</span>
-                </label>
-                <label class="flex items-center space-x-2 cursor-pointer justify-center">
-                    <input type="checkbox" id="use-llm" class="form-checkbox h-5 w-5 text-blue-600 rounded">
-                    <span class="text-gray-700">Enable LLM Post-Processing <span class="text-sm text-orange-600">(+25s/page)</span></span>
-                </label>
-            </div>
-
-            <div class="mt-6 text-center">
-                <button id="convert-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg shadow-lg transition disabled:opacity-50 disabled:cursor-not-allowed">
-                    Convert to LaTeX
-                </button>
-            </div>
-            </div>
-
             <!-- Progress Status -->
-            <div id="status-card" class="hidden bg-white rounded-xl shadow-lg p-6 mb-8 border-l-4 border-blue-500">
-            <h3 class="text-lg font-semibold text-gray-800 mb-2">Processing Status</h3>
-            <div class="w-full bg-gray-200 rounded-full h-4 mb-2">
-                <div id="progress-bar" class="bg-blue-600 h-4 rounded-full transition-all duration-500" style="width: 0%"></div>
-            </div>
-            <p id="status-text" class="text-gray-600 text-sm font-mono">Initializing...</p>
+            <div id="status-card" class="hidden">
+                <h3 class="text-lg font-semibold text-gray-800 mb-2">Processing Status</h3>
+                <div class="w-full bg-gray-200 rounded-full h-4 mb-2">
+                    <div id="progress-bar" style="width: 0%"></div>
+                </div>
+                <p id="status-text" class="text-gray-600 text-sm font-mono">Initializing...</p>
             </div>
 
             <!-- Result Card -->
-            <div id="result-card" class="hidden bg-green-50 rounded-xl shadow border border-green-200 p-8 text-center">
-            <div class="mb-4">
-                <i class="fa-solid fa-check-circle text-5xl text-green-500"></i>
-            </div>
-            <h2 class="text-2xl font-bold text-gray-800 mb-2">Conversion Complete!</h2>
-            <p class="text-gray-600 mb-6">Your LaTeX files are ready to download.</p>
-            <a id="download-link" href="#" class="inline-block bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-lg shadow transition">
-                <i class="fa-solid fa-download mr-2"></i>Download ZIP
-            </a>
-            <div class="mt-4">
-                 <button onclick="location.reload()" class="text-gray-500 underline text-sm hover:text-gray-700">Convert Another File</button>
-            </div>
+            <div id="result-card" class="hidden">
+                <div class="mb-4">
+                    <i class="fa-solid fa-check-circle text-5xl text-green-600"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-gray-800 mb-2">Conversion Complete!</h2>
+                <p class="text-gray-600 mb-6">Your LaTeX files are ready to download.</p>
+                <a id="download-link" href="#">
+                    <i class="fa-solid fa-download mr-2"></i>Download ZIP
+                </a>
+                <div class="mt-4">
+                    <button onclick="location.reload()" class="text-gray-500 text-sm" style="text-decoration: underline; background: none; border: none;">Convert Another File</button>
+                </div>
             </div>
             
             <!-- Error Card -->
-            <div id="error-card" class="hidden bg-red-50 rounded-xl shadow border border-red-200 p-6 text-center">
-            <i class="fa-solid fa-circle-exclamation text-3xl text-red-500 mb-2"></i>
-            <h3 class="text-lg font-bold text-red-800">Error</h3>
-            <p id="error-text" class="text-red-600 text-sm"></p>
-            <button onclick="location.reload()" class="mt-4 text-red-700 underline text-sm">Try Again</button>
+            <div id="error-card" class="hidden">
+                <i class="fa-solid fa-circle-exclamation text-3xl text-red-600 mb-2"></i>
+                <h3 class="text-lg font-bold text-red-800">Error</h3>
+                <p id="error-text" class="text-red-600 text-sm"></p>
+                <button onclick="location.reload()" class="mt-4 text-red-700 text-sm" style="text-decoration: underline; background: none; border: none;">Try Again</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Profile Modal -->
+    <div id="profile-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header" style="background: linear-gradient(135deg, #FFD700 0%, #FF8C00 100%);">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <h2 class="text-3xl font-bold mb-2">My Profile</h2>
+                        <p class="text-sm opacity-90">Manage your personal information</p>
+                    </div>
+                    <button onclick="closeModal('profile-modal')" class="modal-close-btn">
+                        <i class="fa-solid fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="modal-body">
+                <div class="flex items-center mb-6">
+                    <div class="avatar avatar-large mr-4 avatar-upload" id="profile-avatar-large" title="Click to change avatar">
+                        <span id="profile-avatar-text">G</span>
+                        <img id="profile-avatar-img" class="avatar-image" style="display: none;" alt="Avatar">
+                    </div>
+                    <input type="file" id="avatar-input" accept="image/*" style="display: none;">
+                    <div class="flex-1">
+                        <input type="text" id="profile-name" placeholder="Your Name" class="input-field text-lg font-semibold mb-2">
+                        <input type="email" id="profile-email" placeholder="your.email@example.com" class="input-field text-sm text-gray-600">
+                        <p class="text-xs text-gray-500 mt-1"><i class="fa-solid fa-camera mr-1"></i>Click avatar to change picture</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4 mb-6">
+                    <div class="info-card" style="background: linear-gradient(135deg, #FFD700 0%, #FF8C00 100%);">
+                        <div class="info-card-label">Role</div>
+                        <div class="info-card-value" id="profile-role">Guest</div>
+                    </div>
+                    <div class="info-card" style="background: linear-gradient(135deg, #FFA500 0%, #FF6B35 100%);">
+                        <div class="info-card-label">Projects</div>
+                        <div class="info-card-value" id="profile-projects">0</div>
+                    </div>
+                    <div class="info-card" style="background: linear-gradient(135deg, #FFB800 0%, #FFA500 100%);">
+                        <div class="info-card-label">Max Pages</div>
+                        <div class="info-card-value" id="profile-max-pages">1</div>
+                    </div>
+                    <div class="info-card" style="background: linear-gradient(135deg, #FF8C00 0%, #FF6B35 100%);">
+                        <div class="info-card-label">Max Size</div>
+                        <div class="info-card-value" id="profile-max-size">1MB</div>
+                    </div>
+                </div>
+
+                <div class="p-5 mb-6 rounded-xl border-2" style="background: linear-gradient(to bottom right, #fff8e1, #fff3e0); border-color: #ffe082;">
+                    <div class="flex items-center mb-3">
+                        <i class="fa-solid fa-info-circle text-xl mr-2" style="color: #FF8C00;"></i>
+                        <strong style="color: #FF6B35;">Role Hierarchy</strong>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2 text-xs">
+                        <div class="flex items-center space-x-2">
+                            <span class="text-lg">🥉</span>
+                            <div>
+                                <strong>Guest:</strong>
+                                <div class="text-gray-600">1 page, 1MB</div>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <span class="text-lg">📚</span>
+                            <div>
+                                <strong>Students:</strong>
+                                <div class="text-gray-600">10 pages, 5MB</div>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <span class="text-lg">🎓</span>
+                            <div>
+                                <strong>Masters:</strong>
+                                <div class="text-gray-600">20 pages, 10MB</div>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <span class="text-lg">👨‍🏫</span>
+                            <div>
+                                <strong>Lecturers:</strong>
+                                <div class="text-gray-600">50 pages, 20MB</div>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <span class="text-lg">🏆</span>
+                            <div>
+                                <strong>Professors:</strong>
+                                <div class="text-gray-600">100 pages, 50MB</div>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <span class="text-lg">⭐</span>
+                            <div>
+                                <strong>Experts:</strong>
+                                <div class="text-gray-600">200 pages, 100MB</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex space-x-3">
+                    <button onclick="saveProfile()" class="flex-1 btn-primary">
+                        <i class="fa-solid fa-save mr-2"></i>Save Profile
+                    </button>
+                    <button onclick="closeModal('profile-modal')" class="flex-1 btn-secondary">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Projects Modal -->
+    <div id="projects-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header" style="background: linear-gradient(135deg, #FFA500 0%, #FF6B35 100%);">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <h2 class="text-3xl font-bold mb-2">My Projects</h2>
+                        <p class="text-sm opacity-90">View and manage your conversions</p>
+                    </div>
+                    <button onclick="closeModal('projects-modal')" class="modal-close-btn">
+                        <i class="fa-solid fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="modal-body">
+                <div id="projects-list" class="space-y-3">
+                    <!-- Projects will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Modal -->
+    <div id="admin-modal" class="modal">
+        <div class="modal-content" style="max-width: 1000px;">
+            <div class="modal-header" style="background: linear-gradient(135deg, #FFB800 0%, #FF8C00 100%);">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <h2 class="text-3xl font-bold mb-2"><i class="fa-solid fa-crown mr-2"></i>Admin Panel</h2>
+                        <p class="text-sm opacity-90">System management and user control</p>
+                    </div>
+                    <button onclick="closeModal('admin-modal')" class="modal-close-btn">
+                        <i class="fa-solid fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Tabs -->
+            <div class="border-b px-4" style="border-color: #e5e7eb;">
+                <div class="flex space-x-4">
+                    <button class="tab-button active" onclick="switchTab('stats')">
+                        <i class="fa-solid fa-chart-line mr-2"></i>Statistics
+                    </button>
+                    <button class="tab-button" onclick="switchTab('users')">
+                        <i class="fa-solid fa-users mr-2"></i>Users
+                    </button>
+                    <button class="tab-button" onclick="switchTab('all-projects')">
+                        <i class="fa-solid fa-folder mr-2"></i>All Projects
+                    </button>
+                </div>
+            </div>
+
+            <div class="p-6">
+                <!-- Statistics Tab -->
+                <div id="tab-stats" class="tab-content active">
+                    <div class="grid grid-cols-3 gap-4 mb-6">
+                        <div class="bg-blue-50 p-4 rounded-lg">
+                            <div class="text-2xl font-bold text-blue-600" id="stat-users">0</div>
+                            <div class="text-sm text-gray-600">Total Users</div>
+                        </div>
+                        <div class="bg-green-50 p-4 rounded-lg">
+                            <div class="text-2xl font-bold text-green-600" id="stat-projects">0</div>
+                            <div class="text-sm text-gray-600">Total Projects</div>
+                        </div>
+                        <div class="bg-purple-50 p-4 rounded-lg">
+                            <div class="text-2xl font-bold text-purple-600" id="stat-completed">0</div>
+                            <div class="text-sm text-gray-600">Completed</div>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="bg-white border rounded-lg p-4">
+                            <h3 class="font-bold mb-3">Users by Role</h3>
+                            <div id="users-by-role" class="space-y-2 text-sm">
+                                <!-- Will be populated -->
+                            </div>
+                        </div>
+                        <div class="bg-white border rounded-lg p-4">
+                            <h3 class="font-bold mb-3">Projects by Status</h3>
+                            <div id="projects-by-status" class="space-y-2 text-sm">
+                                <!-- Will be populated -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Users Tab -->
+                <div id="tab-users" class="tab-content">
+                    <div class="mb-4 flex justify-between items-center">
+                        <input type="text" id="user-search" placeholder="Search users..." class="input-field w-64">
+                        <button onclick="refreshUsersList()" class="bg-blue-600 text-white px-4 py-2 rounded-lg" style="transition: background-color 0.15s;">
+                            <i class="fa-solid fa-refresh mr-2"></i>Refresh
+                        </button>
+                    </div>
+                    
+                    <div class="overflow-x-auto">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th>Role</th>
+                                    <th>Projects</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="users-table-body">
+                                <!-- Will be populated -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- All Projects Tab -->
+                <div id="tab-all-projects" class="tab-content">
+                    <div class="mb-4">
+                        <input type="text" id="project-search" placeholder="Search projects..." class="input-field w-64">
+                    </div>
+                    <div id="all-projects-list" class="space-y-3 max-h-96 overflow-y-auto">
+                        <!-- Will be populated -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sign Up Modal -->
+    <div id="signup-modal" class="modal">
+        <div class="modal-content" style="max-width: 450px;">
+            <div class="modal-header" style="background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <h2 class="text-2xl font-bold mb-1">Sign Up</h2>
+                        <p class="text-sm opacity-90">Create a new account</p>
+                    </div>
+                    <button onclick="closeModal('signup-modal')" class="modal-close-btn">
+                        <i class="fa-solid fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="modal-body">
+                <div class="p-4 mb-4 rounded-lg" style="background: linear-gradient(to right, #fff8e1, #fff3e0); border: 1px solid #ffe082;">
+                    <div class="text-sm text-gray-700 mb-2">
+                        <strong style="color: #FF8C00;">📝 Role Assignment:</strong>
+                    </div>
+                    <ul class="text-xs text-gray-600 space-y-1" style="list-style: none; padding-left: 0;">
+                        <li>📚 <strong>Students</strong>: Auto-assigned to new users (10 pages / 5MB)</li>
+                        <li>🎓+ <strong>Higher roles</strong>: Upgraded by admin</li>
+                        <li>⭐ <strong>Experts</strong>: Admin role (200 pages / 100MB)</li>
+                    </ul>
+                </div>
+                
+                <label class="text-sm text-gray-700 font-medium mb-2 block">Full Name</label>
+                <input type="text" id="signup-name" placeholder="Your full name" class="input-field mb-3">
+                
+                <label class="text-sm text-gray-700 font-medium mb-2 block">Email Address</label>
+                <input type="email" id="signup-email" placeholder="your.email@example.com" class="input-field mb-3">
+                
+                <label class="text-sm text-gray-700 font-medium mb-2 block">Password</label>
+                <input type="password" id="signup-password" placeholder="Minimum 8 characters" class="input-field mb-4">
+                
+                <div class="flex space-x-2">
+                    <button onclick="performSignUp()" class="flex-1 btn-primary">
+                        <i class="fa-solid fa-user-plus mr-2"></i>Sign Up
+                    </button>
+                    <button onclick="closeModal('signup-modal')" class="btn-secondary px-4">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+                
+                <p class="text-center text-sm text-gray-600 mt-4">
+                    Already have an account? 
+                    <a href="#" onclick="closeModal('signup-modal'); openLoginModal(); return false;" style="color: #FF8C00; font-weight: 500;">Login</a>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Login Modal -->
+    <div id="login-modal" class="modal">
+        <div class="modal-content" style="max-width: 450px;">
+            <div class="modal-header" style="background: linear-gradient(135deg, #FFB800 0%, #FF8C00 100%);">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <h2 class="text-2xl font-bold mb-1">Login</h2>
+                        <p class="text-sm opacity-90">Welcome back!</p>
+                    </div>
+                    <button onclick="closeModal('login-modal')" class="modal-close-btn">
+                        <i class="fa-solid fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="modal-body">
+                <label class="text-sm text-gray-700 font-medium mb-2 block">Email Address</label>
+                <input type="email" id="login-email" placeholder="your.email@example.com" class="input-field mb-3">
+                
+                <label class="text-sm text-gray-700 font-medium mb-2 block">Password</label>
+                <input type="password" id="login-password" placeholder="Enter your password" class="input-field mb-4">
+                
+                <div class="flex space-x-2">
+                    <button onclick="performLogin()" class="flex-1 btn-primary">
+                        <i class="fa-solid fa-right-to-bracket mr-2"></i>Login
+                    </button>
+                    <button onclick="closeModal('login-modal')" class="btn-secondary px-4">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+                
+                <p class="text-center text-sm text-gray-600 mt-4">
+                    Don't have an account? 
+                    <a href="#" onclick="closeModal('login-modal'); openSignUpModal(); return false;" style="color: #FF8C00; font-weight: 500;">Sign Up</a>
+                </p>
             </div>
         </div>
     </div>
 
     <!-- Footer -->
-    <footer class="bg-white border-t border-gray-200">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <footer class="bg-white border-t" style="border-color: #e5e7eb;">
+        <div class="container py-8">
             <div class="text-center">
                 <div class="flex justify-center items-center flex-wrap gap-x-3 gap-y-2 mb-4 text-sm">
-                    <a href="https://truyenthong.edu.vn/" target="_blank" class="text-gray-600 hover:text-blue-600 transition">Home</a>
+                    <a href="https://truyenthong.edu.vn/" target="_blank" class="text-gray-600 transition" style="text-decoration: none;">Home</a>
                     <span class="text-gray-300">|</span>
-                    <a href="https://heytex.truyenthong.edu.vn/" target="_blank" class="text-gray-600 hover:text-blue-600 transition">HeyTeX</a>
+                    <a href="https://heytex.truyenthong.edu.vn/" target="_blank" class="text-gray-600 transition" style="text-decoration: none;">HeyTeX</a>
                     <span class="text-gray-300">|</span>
-                    <a href="https://aithink.truyenthong.edu.vn/" target="_blank" class="text-gray-600 hover:text-blue-600 transition">AIThink</a>
+                    <a href="https://aithink.truyenthong.edu.vn/" target="_blank" class="text-gray-600 transition" style="text-decoration: none;">AIThink</a>
                     <span class="text-gray-300">|</span>
-                    <a href="https://heysym.truyenthong.edu.vn/" target="_blank" class="text-gray-600 hover:text-blue-600 transition">HeySym</a>
+                    <a href="https://heysym.truyenthong.edu.vn/" target="_blank" class="text-gray-600 transition" style="text-decoration: none;">HeySym</a>
                     <span class="text-gray-300">|</span>
-                    <a href="https://heyphom.truyenthong.edu.vn/" target="_blank" class="text-gray-600 hover:text-blue-600 transition">HeyPhom</a>
+                    <a href="https://heyphom.truyenthong.edu.vn/" target="_blank" class="text-gray-600 transition" style="text-decoration: none;">HeyPhom</a>
                     <span class="text-gray-300">|</span>
-                    <a href="https://github.com/phucdhh/HeySeen" target="_blank" class="text-gray-600 hover:text-blue-600 transition">GitHub</a>
+                    <a href="https://github.com/phucdhh/HeySeen" target="_blank" class="text-gray-600 transition" style="text-decoration: none;">GitHub</a>
                     <span class="text-gray-300">|</span>
-                    <a href="mailto:ndmphuc@hueuni.edu.vn" class="text-gray-600 hover:text-blue-600 transition">Contact</a>
+                    <a href="mailto:ndmphuc@hueuni.edu.vn" class="text-gray-600 transition" style="text-decoration: none;">Contact</a>
                 </div>
                 <p class="text-sm text-gray-500 mb-2">
-                    Developed by <a href="https://www.ganjingworld.com/@ndmphuc" target="_blank" class="text-blue-600 hover:underline">Nguyễn Đăng Minh Phúc</a>
+                    Developed by <a href="https://www.ganjingworld.com/@ndmphuc" target="_blank" style="color: #FFB800; text-decoration: underline;">Nguyễn Đăng Minh Phúc</a>
                 </p>
                 <p class="text-sm text-gray-500">
-                    © 2026 <a href="https://truyenthong.edu.vn/" target="_blank" class="text-blue-600 hover:underline">truyenthong.edu.vn</a> | Built with ❤️ for education
+                    © 2026 <a href="https://truyenthong.edu.vn/" target="_blank" style="color: #FFB800; text-decoration: underline;">truyenthong.edu.vn</a> | Built with ❤️ for education
                 </p>
             </div>
         </div>
     </footer>
 
-    <!-- Script -->
-    <script>
-        // Use relative path so it works both locally (if proxied) and via Cloudflare Tunnel
-        // Tunnel maps /convert, /status, /download to 5555, and root to 5556
-        const API_URL = ""; 
-        
-        const dropZone = document.getElementById('drop-zone');
-        const fileInput = document.getElementById('file-input');
-        const convertBtn = document.getElementById('convert-btn');
-        const statusCard = document.getElementById('status-card');
-        const progressBar = document.getElementById('progress-bar');
-        const statusText = document.getElementById('status-text');
-        const resultCard = document.getElementById('result-card');
-        const errorCard = document.getElementById('error-card');
-        const downloadLink = document.getElementById('download-link');
-        const errorText = document.getElementById('error-text');
-
-        let selectedFile = null;
-
-        // Make API URL dynamic based on current host if serving from same domain
-        // const API_URL = window.location.origin.replace(":5556", ":5555"); // Poor man's discovery
-
-        dropZone.addEventListener('click', () => fileInput.click());
-
-        dropZone.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            dropZone.classList.add('border-blue-500', 'bg-blue-50');
-        });
-
-        dropZone.addEventListener('dragleave', () => {
-             dropZone.classList.remove('border-blue-500', 'bg-blue-50');
-        });
-
-        dropZone.addEventListener('drop', (e) => {
-            e.preventDefault();
-            dropZone.classList.remove('border-blue-500', 'bg-blue-50');
-            if (e.dataTransfer.files.length) {
-                handleFile(e.dataTransfer.files[0]);
-            }
-        });
-
-        fileInput.addEventListener('change', (e) => {
-            if (e.target.files.length) {
-                handleFile(e.target.files[0]);
-            }
-        });
-
-        function handleFile(file) {
-            if (file.type !== 'application/pdf') {
-                alert('Please upload a PDF file.');
-                return;
-            }
-            selectedFile = file;
-            dropZone.innerHTML = `
-                <i class="fa-solid fa-file-pdf text-4xl text-red-500 mb-2"></i>
-                <p class="font-bold text-gray-800">${file.name}</p>
-                <p class="text-sm text-gray-500">${(file.size / 1024 / 1024).toFixed(2)} MB</p>
-                <p class="text-xs text-blue-500 mt-2">Click to change</p>
-            `;
-        }
-
-        convertBtn.addEventListener('click', async () => {
-            if (!selectedFile) {
-                alert('Please select a file first.');
-                return;
-            }
-
-            const useMath = document.getElementById('math-ocr').checked;
-            const useLLM = document.getElementById('use-llm').checked;
-            
-            // UI Update
-            convertBtn.disabled = true;
-            convertBtn.classList.add('opacity-50', 'cursor-not-allowed');
-            statusCard.classList.remove('hidden');
-            resultCard.classList.add('hidden');
-            errorCard.classList.add('hidden');
-
-            const formData = new FormData();
-            formData.append('file', selectedFile);
-
-            try {
-                // 1. Create Job
-                const response = await fetch(`${API_URL}/convert?math_ocr=${useMath}&use_llm=${useLLM}`, {
-                    method: 'POST',
-                    body: formData
-                });
-                
-                if (!response.ok) throw new Error('Upload failed');
-                
-                const job = await response.json();
-                const jobId = job.job_id;
-                
-                pollStatus(jobId);
-
-            } catch (error) {
-                showError(error.message);
-            }
-        });
-
-        async function pollStatus(jobId) {
-            const interval = setInterval(async () => {
-                try {
-                    const res = await fetch(`${API_URL}/status/${jobId}`);
-                    const data = await res.json();
-                    
-                    // Update UI
-                    const percentage = Math.round(data.progress * 100);
-                    progressBar.style.width = `${percentage}%`;
-                    statusText.textContent = `${data.message} (${percentage}%)`;
-                    
-                    if (data.status === 'completed') {
-                        clearInterval(interval);
-                        showResult(jobId);
-                    } else if (data.status === 'failed') {
-                        clearInterval(interval);
-                        showError(data.message);
-                    }
-                    
-                } catch (e) {
-                    clearInterval(interval);
-                    showError("Connection lost");
-                }
-            }, 1000);
-        }
-
-        function showResult(jobId) {
-            statusCard.classList.add('hidden');
-            resultCard.classList.remove('hidden');
-            downloadLink.href = `${API_URL}/download/${jobId}`;
-        }
-
-        function showError(msg) {
-            statusCard.classList.add('hidden');
-            errorCard.classList.remove('hidden');
-            errorText.textContent = msg;
-            convertBtn.disabled = false;
-            convertBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-        }
-        
-
-    </script>
+    <!-- Scripts -->
+    <script src="db.js?v=2026020908"></script>
+    <script src="app.js?v=2026020908"></script>
 </body>
 </html>

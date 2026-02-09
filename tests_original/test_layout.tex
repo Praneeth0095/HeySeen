@@ -1,0 +1,71 @@
+\documentclass[11pt, a4paper]{article}
+\usepackage{amsmath, amsthm, amssymb}
+\usepackage{titlesec} % Gói để tùy biến tiêu đề
+\usepackage{geometry}
+\geometry{margin=2cm}
+
+% Thiết lập font và style cho Title để thử thách OCR
+\title{\Huge \textbf{Nghiên cứu về Tính ổn định của Hệ thống HeySeen trong nhận diện Cấu trúc Tài liệu}}
+\author{\large Nguyễn Văn A\textsuperscript{1}, Trần Thị B\textsuperscript{2} \\
+\small \textit{\textsuperscript{1}Phòng Thí nghiệm AI, \textsuperscript{2}Viện Toán học Ứng dụng}}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Tóm tắt: Bài test này được thiết kế để đánh giá khả năng phân loại các thành phần cấu trúc của HeySeen. Mục tiêu chính là kiểm tra xem hệ thống có phân biệt được Tiêu đề chính (Title), Tóm tắt (Abstract), và các cấp độ Mục (Sections) hay không. Nếu HeySeen chuyển đổi các mục này thành văn bản thường, nó sẽ thất bại trong bài kiểm tra tính toàn vẹn của cấu trúc học thuật.
+\end{abstract}
+
+\tableofcontents % Thử thách cực lớn: Mục lục tự động
+
+\newpage
+
+\section{CƠ SỞ LÝ THUYẾT}
+Đây là Section cấp 1 (căn trái, chữ hoa, in đậm). HeySeen cần nhận diện lệnh \verb|\section|.
+
+\subsection{Định nghĩa các không gian hàm}
+Đây là Subsection cấp 2 (đánh số thập phân). Văn bản ở đây bắt đầu lùi đầu dòng để kiểm tra tính nhất quán của dòng chảy văn bản.
+
+\subsubsection{Không gian Banach và Hilbert}
+Đây là Subsubsection cấp 3. Các ký hiệu $L^p(\Omega)$ và $\langle u, v \rangle$ thường xuất hiện ngay sau tiêu đề để gây nhiễu cho bộ tách dòng.
+
+\section{CÁC ĐỊNH LÝ VÀ CHỨNG MINH}
+Phần này kiểm tra các môi trường có tên gọi riêng biệt (Theorems/Proofs).
+
+\begin{theorem}[Sự tồn tại nghiệm]
+Giả sử hàm số $f(x)$ liên tục trên khoảng đóng $[a, b]$. Khi đó tồn tại ít nhất một điểm $c \in (a, b)$ sao cho:
+\[ f'(c) = \frac{f(b) - f(a)}{b - a} \]
+\end{theorem}
+
+\begin{proof}
+Chứng minh này sử dụng định lý Rolle làm cơ sở... HeySeen phải nhận diện chữ "Chứng minh" (Proof) không phải là một section mà là nhãn của một khối nội dung.
+\end{proof}
+
+\section{PHÂN TÍCH ĐA CỘT VÀ PHỤ LỤC}
+\textit{(Mô phỏng cấu trúc ghi chú)}
+
+\paragraph{Ghi chú quan trọng:} Dòng này là một Paragraph header. OCR thường nhầm nó với văn bản thường in đậm thay vì một đơn vị cấu trúc.
+
+\subparagraph{Ghi chú chi tiết hơn:} Một cấp độ thấp hơn nữa trong cấu trúc tài liệu.
+
+\appendix
+\section*{PHỤ LỤC A: CÁC BIỂU THỨC BỔ TRỢ}
+Phụ lục thường có cách đánh số bằng chữ cái (A, B, C). HeySeen cần hiểu đây vẫn là một Section.
+
+\[ \Gamma(z) = \int_0^\infty t^{z-1} e^{-t} dt \]
+
+\section*{PHỤ LỤC B: DANH MỤC KÝ HIỆU}
+\begin{description}
+    \item[$\mathbb{R}$] Tập hợp các số thực.
+    \item[$\mathbb{C}$] Tập hợp các số phức.
+    \item[$\nabla$] Toán tử Nabla.
+\end{description}
+
+\begin{thebibliography}{9}
+\bibitem{ref1} HeySeen Team, \textit{Advanced Structural OCR}, 2026.
+\bibitem{ref2} Mathpix vs HeySeen: A Comparative Study.
+\end{thebibliography}
+
+\end{document}

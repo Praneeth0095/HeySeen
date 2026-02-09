@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from typing import List, Dict, Optional
 from pathlib import Path
 import json
+import re
 from datetime import datetime
 
 from .content_extractor import ExtractedContent
@@ -133,12 +134,17 @@ class TeXBuilder:
         if minimal:
             # Minimal preamble for clean comparison
             preamble = r"""\documentclass[12pt,a4paper]{article}
-\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{amsmath,amssymb,amsfonts,amsthm}
 \usepackage{graphicx}
 \usepackage{geometry}
 \geometry{margin=2.5cm}
 \setlength{\parindent}{0pt}
 \setlength{\parskip}{6pt}
+
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem*{proof_custom}{Proof}
+\renewcommand{\abstractname}{\Large\bfseries Abstract}
 
 """
         else:
@@ -202,6 +208,9 @@ class TeXBuilder:
         # Merge consecutive text blocks into paragraphs
         merged_items = self._merge_text_blocks(contents, blocks)
         
+        # Apply Semantic Refinement (Abstract, Theorem, Proof, TOC fix)
+        merged_items = self._refine_semantics(merged_items, page_num)
+        
         # Extract first title as section heading
         first_title = None
         for item in merged_items[:]: # Iterate over a copy to allow modification
@@ -216,13 +225,66 @@ class TeXBuilder:
         
         # Generate content with structure awareness
         in_list = False
+        in_abstract = False
+        
         for item in merged_items:
+            # Handle Abstract Environment
+            if item.get('type') == 'abstract':
+                if not in_abstract:
+                     page_tex += "\\begin{abstract}\n"
+                     in_abstract = True
+                
+                text = item['text']
+                # Strip prefix
+                text = re.sub(r'^(Abstract|Tóm tắt)[:.]?\s*', '', text, flags=re.IGNORECASE)
+                page_tex += f"{self._escape_latex(text)}\n"
+                continue # Stay in abstract until non-abstract item
+            else:
+                 if in_abstract:
+                     page_tex += "\\end{abstract}\n\n"
+                     in_abstract = False
+            
             if item['type'] == 'title':
                 # Close any open list
                 if in_list:
                     page_tex += "\\end{itemize}\n\n"
                     in_list = False
                 page_tex += f"\\subsection*{{{self._escape_latex(item['text'])}}}\n\n"
+
+            elif item['type'] == 'theorem':
+                # Close any open list
+                if in_list:
+                    page_tex += "\\end{itemize}\n\n"
+                    in_list = False
+                
+                # Parse title from text (Theorem 1.1: ...)
+                text = item['text']
+                match = re.search(r'^(Định lý|Theorem|Lemma|Bổ đề|Tính chất|Hệ quả)(.*?)(:|.)\s*(.*)', text, re.IGNORECASE | re.DOTALL)
+                
+                env_name = "theorem"
+                if match:
+                    prefix_type = match.group(1).lower()
+                    if "lemma" in prefix_type or "bổ đề" in prefix_type:
+                        env_name = "lemma"
+                    
+                    label = match.group(2).strip()
+                    content = match.group(4).strip()
+                    opt_arg = f"[{label}]" if label and len(label) < 20 else ""
+                    
+                    page_tex += f"\\begin{{{env_name}}}{opt_arg}\n{self._escape_latex(content)}\n\\end{{{env_name}}}\n\n"
+                else:
+                    page_tex += f"\\begin{{theorem}}\n{self._escape_latex(text)}\n\\end{{theorem}}\n\n"
+
+            elif item['type'] == 'proof':
+                 # Close any open list
+                if in_list:
+                    page_tex += "\\end{itemize}\n\n"
+                    in_list = False
+                
+                text = item['text']
+                # Strip "Proof." prefix
+                text = re.sub(r'^(Proof|Tóm tắt|Chứng minh)(\s*[.:])?\s*', '', text, flags=re.IGNORECASE)
+                page_tex += f"\\begin{{proof}}\n{self._escape_latex(text)}\n\\end{{proof}}\n\n"
             
             elif item['type'] == 'section':
                 # Close any open list
@@ -237,6 +299,13 @@ class TeXBuilder:
                     page_tex += "\\end{itemize}\n\n"
                     in_list = False
                 page_tex += f"\\subsection{{{self._escape_latex(item['text'])}}}\n\n"
+            
+            elif item['type'] == 'subsubsection':
+                # Close any open list
+                if in_list:
+                    page_tex += "\\end{itemize}\n\n"
+                    in_list = False
+                page_tex += f"\\subsubsection{{{self._escape_latex(item['text'])}}}\n\n"
             
             elif item['type'] == 'list-item':
                 # Open list if needed
@@ -253,8 +322,12 @@ class TeXBuilder:
                     page_tex += "\\end{itemize}\n\n"
                     in_list = False
                 # Add paragraph with proper spacing
-                escaped = self._escape_latex(item['text'])
-                page_tex += f"{escaped}\n\n"
+                # Check for "References" title
+                if re.match(r'^(References|Tài liệu tham khảo|Bibliography)', item['text'], re.IGNORECASE):
+                     page_tex += f"\\section*{{{self._escape_latex(item['text'])}}}\n\n"
+                else:
+                     escaped = self._escape_latex(item['text'])
+                     page_tex += f"{escaped}\n\n"
             elif item['type'] == 'math':
                 # Close any open list
                 if in_list:
@@ -274,7 +347,16 @@ class TeXBuilder:
                 # Insert table latex directly if available
                 if item['latex']:
                     page_tex += f"\n{item['latex']}\n\n"
-                    
+            
+            elif item['type'] == 'raw_latex':
+                 # Close any open list
+                if in_list:
+                    page_tex += "\\end{itemize}\n\n"
+                    in_list = False
+                # Insert raw latex directly
+                if item.get('latex'):
+                    page_tex += f"\n{item['latex']}\n\n"
+
                 # Handle Fallback where type is 'table' but has text content (Rejected by TATR)
                 elif item.get('text'):
                      # Treat like a paragraph
@@ -307,6 +389,10 @@ class TeXBuilder:
                 page_tex += f"  \\caption{{Figure from page {page_num}}}\n"
                 page_tex += f"\\end{{figure}}\n\n"
         
+        # Cleanup abstract close
+        if in_abstract:
+            page_tex += "\\end{abstract}\n\n"
+        
         # Close any remaining open list
         if in_list:
             page_tex += "\\end{itemize}\n\n"
@@ -333,7 +419,8 @@ class TeXBuilder:
         
         import re
         noise_pattern = re.compile(r'^\s*\d+\s*$')
-        eq_num_pattern = re.compile(r'^\s*[\(\[](\d+(\.\d+)*)[\)\]]\s*$')
+        # Robust equation number pattern: (1.1), [1.1], (1 . 1)
+        eq_num_pattern = re.compile(r'^\s*[\(\[]\s*(\d+(?:[\.\s]\d+)*)\s*[\)\]][\.\,\;]?\s*$')
         
         # Pattern to detect "Title 1" -> "1 Title" (Reading order fix)
         # Matches: Any text (non-dot end) + space + Number (e.g. "1", "2.1")
@@ -406,10 +493,25 @@ class TeXBuilder:
                 ends_sentence = prev_text.endswith(('.', '!', '?', ':')) or prev_text.endswith(('."', '!"', '?"'))
                 ends_hyphen = prev_text.endswith('-')
                 
+                # Check for Uppercase Header (force break)
+                is_uppercase_header = False
+                if content.text:
+                    text_strip = content.text.strip()
+                    # Heuristic: Uppercase, not too short (avoid "A"), not too long, looks like header
+                    # Allow 20% tolerance for OCR noise (e.g. "TiTLE")
+                    upper_chars = sum(1 for c in text_strip if c.isupper())
+                    total_alpha = sum(1 for c in text_strip if c.isalpha())
+                    
+                    if total_alpha > 0 and (upper_chars / total_alpha) > 0.8:
+                        if len(text_strip) > 3 and len(text_strip) < 150:
+                            is_uppercase_header = True
+
                 # --- DECISION LOGIC ---
                 if is_col_change:
                     should_break = True
                 elif is_huge_gap:
+                    should_break = True
+                elif is_uppercase_header:
                     should_break = True
                 elif ends_hyphen:
                     should_break = False  # Always merge hyphenated lines
@@ -471,16 +573,30 @@ class TeXBuilder:
                     prev_block = block
             
             elif content.latex:
+                pending_tag = None
+                
                 # Flush paragraph before math
                 if current_paragraph:
-                    merged.append({
-                        'type': 'paragraph',
-                        'text': ' '.join(current_paragraph)
-                    })
-                    current_paragraph = []
+                    # Check if paragraph is just a tag (Leading Tag)
+                    joined_text = ' '.join(current_paragraph).strip()
+                    m_tag = eq_num_pattern.match(joined_text)
+                    if m_tag:
+                         # It is a tag! capture it for THIS math block
+                         pending_tag = m_tag.group(1).replace(" ", "")
+                         current_paragraph = [] # Consumed
+                    else:
+                        merged.append({
+                            'type': 'paragraph',
+                            'text': ' '.join(current_paragraph)
+                        })
+                        current_paragraph = []
                 
                 # Distinguish between math and table
                 block_type = 'table' if block.block_type == 'table' else 'math'
+                
+                final_latex = content.latex
+                if pending_tag and block_type == 'math':
+                    final_latex += f" \\tag{{{pending_tag}}}"
                 
                 # TABLE-MATH MERGE LOGIC (Heuristic)
                 # If we just added a table, and this is a math block
@@ -494,30 +610,12 @@ class TeXBuilder:
                     # Logic 1: Very close vertical gap (e.g. < 2% page height)
                     is_very_close = v_gap < 0.02
                     
-                    # Logic 2: Table structure might be incomplete? (Hard to check string)
-                    
                     if is_very_close:
-                        # Append this math block as a loose line to the table latex? Or create a caption?
-                        # Or maybe it's a row that got split?
-                        # If table latex ends with \end{tabular}\end{center}, we can inject it?
-                        # It's safer to just let it be a separate block but maybe minimize spacing?
-                        # BUT user requirement is "split from table".
-                        # Injecting into tabular is risky (column count mismatch).
-                        # Compromise: Append inside the same environment if possible? No.
-                        
-                        # User said: "hang chua cong thuc tich phan... bi tach ra... hien thi thanh block toan rieng biet"
-                        # Ideally, this should be a row in the table.
-                        # But we can't reconstruct the row structure easily here (cells?).
-                        
-                        # However, we can simply append the LaTeX code right AFTER the tabular but BEFORE the center closes?
-                        # Or just put it implicitly?
-                        
-                        # Let's settle for just adding it normally for now, as merging without structure is dangerous.
                         pass
 
                 merged.append({
                     'type': block_type,
-                    'latex': content.latex
+                    'latex': final_latex
                 })
                 prev_block = block
             
@@ -544,6 +642,219 @@ class TeXBuilder:
         
         return merged
     
+    def _refine_semantics(self, items: List[Dict], page_num: int) -> List[Dict]:
+        """
+        Refine types based on text content (Semantic Parsing).
+        Converts generic 'paragraph' or 'table' to 'abstract', 'proof', etc.
+        """
+        
+        refined_items = []
+        
+        # Regex Patterns
+        abstract_pattern = re.compile(r'^(Abstract|Tóm tắt)(\s*[:.])?', re.IGNORECASE)
+        theorem_pattern = re.compile(r'^(Định lý|Theorem|Lemma|Bổ đề|Tính chất|Hệ quả)\b', re.IGNORECASE)
+        # Refined Proof Pattern: Handles formatting chars like *, \, { and \textit{...}
+        proof_pattern = re.compile(r'^(\\textit\{|\\textbf\{|[\*\\\{])*(Chứng minh|Proof|Lời giải)[\*\}\.]*(\s*[:.])?$', re.IGNORECASE)
+        proof_start_pattern = re.compile(r'^(\\textit\{|\\textbf\{|[\*\\\{])*(Chứng minh|Proof|Lời giải)[\*\}\.]*(\s*[:.])', re.IGNORECASE)
+        toc_line_pattern = re.compile(r'(\.\s*){4,}|…{3,}')
+        
+        # New Patterns for Phase 2.7
+        explicit_section_pattern = re.compile(r'^(PHẦN|PHỤ LỤC|CHƯƠNG|SECTION|APPENDIX)\s+([A-Z0-9\.]+)', re.IGNORECASE)
+        paragraph_header_pattern = re.compile(r'^([^\.]+?):') # "Note:", "Ghi chú:" pattern
+
+        for i, item in enumerate(items):
+            text = item.get('text', '').strip()
+            
+            # Skip empty
+            if not text and not item.get('latex') and not item.get('image_path'):
+                continue
+            
+            # 0. Strip leading Latex formatting for detection (heuristic)
+            clean_text_for_check = re.sub(r'\\[a-zA-Z]+\{', '', text).replace('}', '')
+
+            # 1. Abstract Detection
+            if page_num == 1 and abstract_pattern.match(text):
+                 item['type'] = 'abstract'
+            
+            # --- Phase 2.7: Explicit Structural Markers (High Priority) ---
+            
+            # 1b. Explicit Section Keywords (Phụ lục, Phần...)
+            # These override standard paragraph detection
+            if explicit_section_pattern.match(text):
+                 item['type'] = 'section'
+
+            # 1c. Paragraph Headers (Bold/Short start with colon)
+            # Checks for "Something short:" at the start
+            if item['type'] == 'paragraph':
+                 m = paragraph_header_pattern.match(text)
+                 if m:
+                     header = m.group(1)
+                     # Heuristic: Header must be short (< 5 words) and remaining text exists
+                     if len(header.split()) < 6 and len(text) > len(header) + 2:
+                         # We can't change 'type' to paragraph_header directly supported by LaTeX easily 
+                         # unless we use \paragraph{Header} text.
+                         # Instead, let's inject valid latex \paragraph.
+                         # But wait, self._escape_latex is called later on item['text'].
+                         # If we assume item is processed, we can try to mark it.
+                         # OR we define a new type 'paragraph-with-header'.
+                         # Simpler: just bold it manually here if we can't change type logic.
+                         # BUT better: Make it a 'section' type? No, \paragraph is distinct.
+                         # Let's use 'raw_latex' to control output perfectly.
+                         # Reconstruct text: \paragraph{Header} Rest
+                         escaped_header = self._escape_latex(header)
+                         escaped_rest = self._escape_latex(text[len(header)+1:].strip())
+                         # Use raw_latex
+                         item['type'] = 'raw_latex'
+                         item['latex'] = f"\\paragraph{{{escaped_header}:}} {escaped_rest}"
+                         item['text'] = None # Suppress text output
+
+            # 2. Theorem/Lemma Detection
+            # Look for "Theorem 1.1" or "Định lý [ABC]"
+            # Use clean text to avoid Latex noise
+            if theorem_pattern.match(clean_text_for_check):
+                 # Check length - Theorems are usually > 10 chars
+                 if len(clean_text_for_check) > 10:
+                     item['type'] = 'theorem'
+
+            # 3. Proof Detection
+            if proof_start_pattern.match(text) or proof_pattern.match(text):
+                 item['type'] = 'proof'
+                 
+            # 4. TOC Fix (Table False Positive)
+            # If it's a "table" but contains lots of dots "......" -> likely TOC or index
+            if item['type'] == 'table':
+                 # Check if latex source contains dots
+                 table_content = item.get('latex', '') or item.get('text', '')
+                 if toc_line_pattern.search(table_content):
+                      # It's a TOC or similar list.
+                      item['type'] = 'raw_latex' # Use raw latex injection
+                      
+                      if item.get('latex'):
+                          # Convert Table to formatted list using \dotfill
+                          raw = item['latex']
+                          # Strip environments
+                          raw = re.sub(r'\\begin\{tabular\}.*?(\n|$)', '', raw)
+                          raw = raw.replace(r'\end{tabular}', '')
+                          raw = raw.replace(r'\begin{center}', '').replace(r'\end{center}', '')
+                          raw = re.sub(r'\\hline', '', raw)
+                          
+                          # Convert & to \dotfill
+                          # Typical TOC row: "Section Name & ... & Page \\"
+                          lines = []
+                          for line in raw.split(r'\\'):
+                              if not line.strip(): continue
+                              # Replace splitters
+                              parts = line.split('&')
+                              if len(parts) > 1:
+                                  # Name \dotfill Page
+                                  clean_line = f"{parts[0].strip()} \\dotfill {parts[-1].strip()}"
+                                  lines.append(clean_line)
+                              else:
+                                  lines.append(line.strip())
+                          
+                          item['latex'] = "\n\n".join(lines)
+                      
+                      elif item.get('text'):
+                          # Fallback for missing latex
+                          clean_text = item['text']
+                          # Try to guess structure? Just return text as is for now
+                          item['type'] = 'paragraph' # Fallback
+            
+            # 5. Uppercase Section Inference (Rule: Short, Uppercase, >3 words)
+            if item['type'] == 'paragraph' and len(text) < 100:
+                # Check if it looks like a math equation -> Skip promotion
+                is_math = any(op in text for op in ['=', '<', '>', '≤', '≥', '∫', '∑'])
+                
+                if not is_math:
+                    words = text.split()
+                    if len(words) >= 3:
+                         # Check if mostly uppercase (exclude small numbers or symbols)
+                         # Allow up to 1 non-uppercase word (like "and")
+                         upper_count = sum(1 for w in words if w.isupper() or not w.isalpha())
+                         if upper_count >= len(words) - 1:
+                             # It is likely a Section Header
+                             item['type'] = 'section'
+
+            # Phase 3: Smart Section Splitting (Also applies to paragraphs that LOOK like sections but ran long)
+            # If a Section is too long (> 20 words) OR a paragraph starts with a Section Pattern
+            should_check_splitting = False
+            
+            # Vietnamese Uppercase Charset
+            VN_UPPER = "A-ZÁÀẢÃẠĂẮẰẲẴẶÂẤẦẨẪẬĐÉÈẺẼẸÊẾỀỂỄỆÍÌỈĨỊÓÒỎÕỌÔỐỒỔỖỘƠỚỜỞỠỢÚÙỦŨỤƯỨỪỬỮỰÝỲỶỸỴ"
+            
+            if item['type'] == 'section':
+                should_check_splitting = True
+            elif item['type'] == 'paragraph' and len(text) > 100:
+                # Check if it STARTS with Uppercase Header?
+                # Pattern: "UPPERCASE HEADER Text continues..."
+                # Handle Vietnamese chars
+                pattern = fr'^([{VN_UPPER}\s\(\)0-9\.]{{5,50}}?)\s+([A-ZÁ-Ỹ][a-zá-ỹ].*)'
+                m_start_upper = re.match(pattern, clean_text_for_check, re.DOTALL)
+                if m_start_upper and len(m_start_upper.group(1).split()) > 2:
+                    # Potential Section Candidate! Promote check
+                    should_check_splitting = True
+
+            if should_check_splitting:
+                words = text.split()
+                if len(words) > 20: 
+                    # Attempt to split Header from Body
+                    header_txt = None
+                    body_txt = None
+
+                    # Heuristic 1: Split by first newline (if OCR preserved line breaks in block)
+                    if '\n' in text:
+                        parts = text.split('\n', 1)
+                        possible_header = parts[0].strip()
+                        # Use simple upper check (won't work perfectly for VN but decent proxy)
+                        # or check against VN_UPPER regex
+                        if len(possible_header.split()) < 20 and re.match(fr'^[{VN_UPPER}\s0-9\.]+$', possible_header):
+                             header_txt = possible_header
+                             body_txt = parts[1].strip()
+                    
+                    if not header_txt:
+                        # Heuristic 2: Split by first sentence ending or colon
+                        # Match: "HEADER: Body text..." or "HEADER. Body text..."
+                        # Look for punctuation followed by space
+                        # Only accept if PRE-punctuation part is UPPERCASE or Bold-like
+                        m = re.match(r'^(.{5,50}?)(:|.)\s+(.*)', text, re.DOTALL)
+                        if m:
+                            candidate_header = m.group(1) + m.group(2)
+                            # Check if candidate is "Section-like" (Uppercase)
+                            if re.match(fr'^[{VN_UPPER}\s0-9\.\:]+$', candidate_header) or explicit_section_pattern.match(candidate_header):
+                                header_txt = candidate_header
+                                body_txt = m.group(3)
+                        
+                        if not header_txt:
+                             # Heuristic 3: Transition from Upper to Mixed case
+                             # "SECTION HEADER This is body"
+                             pattern = fr'^([{VN_UPPER}\s\(\)0-9\.]{{5,50}}?)\s+([A-ZÁ-Ỹ][a-zá-ỹ].*)'
+                             m_upper = re.match(pattern, text, re.DOTALL)
+ 
+                             if m_upper:
+                                 h_cand = m_upper.group(1).strip()
+                                 if len(h_cand.split()) < 15 and len(h_cand) > 5:
+                                     header_txt = h_cand
+                                     body_txt = m_upper.group(2).strip()
+                    
+                    if header_txt and body_txt:
+                        # Update current item to be just Header and FORCE type to section
+                        item['type'] = 'section'
+                        item['text'] = header_txt
+                        refined_items.append(item)
+                        
+                        # Add new Paragraph item for Body
+                        refined_items.append({
+                            'type': 'paragraph', 
+                            'text': body_txt,
+                            'latex': None,
+                            'image_path': None
+                        })
+                        continue # Skip appending original 'item'
+
+            refined_items.append(item)
+            
+        return refined_items
+
     def _classify_text_block(self, block: LayoutBlock, text: str) -> str:
         """
         Classify text block based on structure metadata.
@@ -587,6 +898,11 @@ class TeXBuilder:
         import re
         section_pattern = r'^(\d+(\.\d+)*|[IVX]+\.|[A-Z]\.)\s+[A-ZÀ-Ỹ]'
         if re.match(section_pattern, text_start) and len(text_start) < 80:
+            # EXCEPTION: Date detection (Year start)
+            # Avoids "2026 February..." being Section 2026
+            if re.match(r'^(19|20)\d{2}', text_start):
+                 return "text"
+
             # Count dots to determine level for numeric sections
             if re.match(r'^\d', text_start):
                  dot_count = text_start.split(' ')[0].count('.')
@@ -620,6 +936,19 @@ class TeXBuilder:
                 elif text_len < 30 and block.bbox.y0 < 0.10:
                     return "section"
         
+        # Phase 2.6: Title Heuristic Fallback
+        # If text is at the very top of Page 1 and looks substantial, assume it's Title
+        if block.page_num == 0 and block.bbox.y0 < 0.15 and text_len > 20 and text_len < 200:
+             # If Surya didn't already label it
+             if block.raw_label not in ["Figure", "Table", "Page-header"]:
+                  # Check if it's the largest/boldest block seen so far? (Hard in stateless)
+                  # Just check if it's centered or bold? 
+                  if block.is_bold:
+                      return "title"
+                  # Or simply if it's the first block?
+                  if block.bbox.y0 < 0.1: # Very top
+                      return "title"
+
         # Check for list patterns
         text_start = text.strip()[:3]
         if text_start.startswith(("• ", "- ", "* ", "1.", "a.", "i.")):
@@ -632,7 +961,19 @@ class TeXBuilder:
         """Escape special LaTeX characters, preserving math content"""
         import re
         
-        # Fix common Vietnamese encoding issues first
+        # Phase 2.6: HTML Tag Cleanup
+        # <sup...>...</sup> -> \textsuperscript{...}
+        # We perform this REPLACEMENT before splitting logic so it stays as part of "text"
+        # BUT we must treat \textsuperscript as a command to NOT escape?
+        # Actually easier to use the _process_rich_text logic OR placeholders.
+        
+        # Strategy: Replace <sup> with unique alphanumeric placeholders that survive escape
+        # Using XYZ prefix to avoid collision with real text
+        text = re.sub(r'<sup\b[^>]*>(.*?)</sup>', r'XYZSUPSTART\1XYZSUPEND', text, flags=re.IGNORECASE)
+        text = re.sub(r'<sub\b[^>]*>(.*?)</sub>', r'XYZSUBSTART\1XYZSUBEND', text, flags=re.IGNORECASE)
+        text = text.replace('&nbsp;', ' ')
+        
+        # Fix common Vietnamese encoding issues
         text = self._fix_vietnamese_encoding(text)
         
         # Pattern to match <math> tags OR $...$ delimiters
@@ -676,6 +1017,10 @@ class TeXBuilder:
         
         # Restore structural placeholders
         final_text = final_text.replace("[[ITEM]]", "\n\\item ")
+        
+        # Restore HTML superscript/subscript placeholders
+        final_text = final_text.replace("XYZSUPSTART", "\\textsuperscript{").replace("XYZSUPEND", "}")
+        final_text = final_text.replace("XYZSUBSTART", "\\textsubscript{").replace("XYZSUBEND", "}")
         
         return final_text
 
@@ -727,18 +1072,25 @@ class TeXBuilder:
             r"Phân biửt": "Phân biệt",
             r"chử": "chữ",
             
-            # Suggested Fixes
+            # Phase 3: Enhanced Dictionary Mapping
             r"h\.t\.d": "h.t.đ",
             r"v'oi": "với",
+            r"vòi": "với",
+            r"khì": "khi",
+            r"tại": "tại", # Prevent "t?i"
+            r"\bva\b": "và",
             r"công thúc": "công thức",
             r"đinh lý": "định lý",
             r"già sử": "giả sử",
             r"mênh đề": "mệnh đề",
             r"hàm sô": "hàm số",
+            r"Phuong trình": "Phương trình",
+            r"nghiêm": "nghiệm",
+            r"tôn tại": "tồn tại",
+            r"khong gian": "không gian",
             
             # Common OCR Errors
             r"vửét": "viết",
-            r"công thức": "công thức", # normalize if needed
             r"đirợc": "được",
             r"dược": "được",
             r"cùa": "của",

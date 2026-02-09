@@ -113,7 +113,7 @@ def improve(tex_file: Path, output: Path, llm_url: str, model: str):
 @click.option(
     "--dpi",
     type=int,
-    default=150,
+    default=300,
     help="DPI for PDF rendering (higher = better quality, slower)",
 )
 @click.option(

@@ -1,0 +1,74 @@
+\documentclass[11pt, a4paper]{article}
+%\usepackage[vietnamese]{babel}
+%\usepackage[utf8]{inputenc}
+\usepackage[top=2cm, bottom=2cm, left=2cm, right=2cm]{geometry}
+\usepackage{amsmath, amsfonts, amssymb}
+\usepackage{booktabs} % Cho bảng chuyên nghiệp
+\usepackage{multirow} % Cho ô hợp nhất theo chiều dọc
+
+\begin{document}
+\begin{center}
+\textbf{HeySeen Benchmark v6: Advanced Table Structure Recognition}
+\end{center}
+
+\section{Trang 1: Bảng hỗn hợp văn bản và công thức}
+Thử thách: HeySeen phải giữ được cấu trúc cột khi trong ô chứa các ký hiệu toán học phức tạp.
+
+\begin{table}[h]
+\centering
+\caption{So sánh các đặc trưng của hàm số}
+\begin{tabular}{|l|c|r|}
+\hline
+\textbf{Loại hàm số} & \textbf{Biểu thức} & \textbf{Đạo hàm $f'(x)$} \\ \hline
+Hàm mũ & $e^{ax}$ & $a \cdot e^{ax}$ \\ \hline
+Hàm Logarit & $\ln(x)$ & $\frac{1}{x}, x > 0$ \\ \hline
+Hàm lượng giác & $\sin^2(x) + \cos(x)$ & $2\sin(x)\cos(x) - \sin(x)$ \\ \hline
+Tích phân bất định & $\int f(x)dx$ & $f(x)$ \\ \hline
+\end{tabular}
+\end{table}
+
+\section{Trang 2: Bảng có ô hợp nhất (Spanning Rows/Cols)}
+Đây là "cơn ác mộng" của Layout Analysis. HeySeen cần nhận diện được ô "Phân loại" chiếm 2 dòng và ô "Giá trị đo" chiếm 3 cột.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{|l|l|c|c|c|}
+\hline
+\multirow{2}{*}{\textbf{Phân loại}} & \multirow{2}{*}{\textbf{Tham số}} & \multicolumn{3}{c|}{\textbf{Giá trị đo thực nghiệm}} \\ \cline{3-5} 
+ &  & \textbf{Lần 1} & \textbf{Lần 2} & \textbf{Lần 3} \\ \hline
+\multirow{2}{*}{Vật liệu A} & Độ cứng & 45.2 & 46.1 & 45.8 \\ \cline{2-5} 
+ & Độ bền & 120 & 118 & 122 \\ \hline
+Vật liệu B & Hệ số ma sát & 0.25 & 0.24 & 0.26 \\ \hline
+\end{tabular}
+\end{table}
+
+\section{Trang 3: Ma trận trong bảng (Nested Structures)}
+Một thử thách cực đại: Một bảng mà trong đó mỗi ô lại chứa một ma trận hoặc một hệ phương trình.
+
+\begin{table}[h]
+\centering
+\renewcommand{\arraystretch}{2}
+\begin{tabular}{|p{4cm}|p{6cm}|}
+\hline
+\textbf{Cấu trúc ma trận} & \textbf{Định thức / Giải pháp} \\ \hline
+$\mathbf{A} = \begin{bmatrix} a & b \\ c & d \end{bmatrix}$ & $\det(\mathbf{A}) = ad - bc$ \\ \hline
+Hệ phương trình & $\begin{cases} x + y = 2 \\ 2x - y = 1 \end{cases} \implies (x,y) = (1,1)$ \\ \hline
+\end{tabular}
+\end{table}
+
+\section{Trang 4: Bảng dữ liệu lớn (Longtable)}
+(Bạn có thể lặp lại đoạn này để tạo độ dài nhiều trang). Kiểm tra xem HeySeen có bị lệch cột khi bảng kéo dài qua trang mới hay không.
+
+\begin{center}
+\begin{tabular}{cccc}
+\toprule
+ID & Ký hiệu & Công thức truy hồi & Kết quả \\
+\midrule
+001 & $\alpha_n$ & $\alpha_{n-1} + \sqrt{n}$ & 1.414 \\
+002 & $\beta_n$ & $\sum_{i=1}^n \frac{1}{i^2}$ & 1.645 \\
+003 & $\gamma_n$ & $\prod_{i=1}^n (1 - x_i)$ & 0.000 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\end{document}

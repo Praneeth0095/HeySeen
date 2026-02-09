@@ -136,6 +136,13 @@ class ContentExtractor:
         x0, y0, x1, y1 = block.bbox.to_pixels(image.width, image.height)
         block_image = image.crop((x0, y0, x1, y1))
         
+        # Initialize content object
+        content = ExtractedContent(
+            block_id=block.block_id,
+            block_type=block.block_type,
+            confidence=block.confidence,
+        )
+        
         # Route to appropriate extractor
         if block.block_type in ["text", "title", "caption", "section", "subsection", "list-item"]:
             # Pass bbox in pixel coordinates for recognition
@@ -240,6 +247,28 @@ class ContentExtractor:
                 latex = results[0].strip()
                 # Clean up Texify output
                 latex = self._clean_texify_output(latex)
+                
+                # --- Math Hallucination Guard (Phase 2.5) ---
+                # Fallback to text if Texify produces Vietnamese text instead of math
+                if self._has_vietnamese_chars(latex, threshold=0.3):
+                     logger.info(f"Math Hallucination detected (~{len(latex)} chars). Fallback to Text.")
+                     # Fallback to Text OCR for this block
+                     # We reuse internal recognition since we have the image crop
+                     # But _extract_text expects full image + bbox
+                     # So we must perform OCR on this cropped image directly?
+                     # Surya input: Image or [Image]
+                     # self.text_recognizer expects {images, languages}
+                     
+                     # Simple workaround: Return invalid math marker so caller handles?
+                     # Or run text extraction now.
+                     try:
+                         ocr_res = self.text_recognizer(images=[image], languages=["vi"])
+                         if ocr_res and len(ocr_res) > 0:
+                             fallback_text = " ".join([l.text for l in ocr_res[0].text_lines])
+                             return f"\\text{{{fallback_text}}}"
+                     except:
+                         pass
+
                 return latex
             return ""
         except Exception as e:

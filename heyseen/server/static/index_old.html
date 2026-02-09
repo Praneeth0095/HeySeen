@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HeySeen - PDF to LaTeX Converter</title>
+    <link href="tailwind.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        .content-wrapper {
+            flex: 1 0 auto;
+        }
+        footer {
+            flex-shrink: 0;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Header -->
+    <header class="bg-white shadow-sm border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div class="flex items-center space-x-4">
+                <i class="fa-solid fa-eye text-blue-600 text-3xl" style="margin-right: 10px;"></i>
+                <h1 class="text-2xl font-bold text-gray-800">HeySeen</h1>
+                <p class="text-sm text-gray-600"style="margin-left: 10px;">Chuyển văn bản Toán dạng PDF sang LaTeX</p>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <div class="content-wrapper">
+        <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <!-- Header -->
+            <div class="text-center mb-10">
+                <div class="flex justify-center items-center mb-4">
+                    <i class="fa-solid fa-eye text-blue-600 text-5xl"></i>
+                </div>
+                <h1 class="text-4xl font-bold text-gray-900 mb-3">HeySeen</h1>
+                <p class="text-xl text-gray-600 mb-4">PDF to LaTeX Converter with AI-Powered Math Recognition</p>
+                <div class="flex justify-center items-center space-x-8 text-sm text-gray-500">
+                    <span class="flex items-center">
+                        <i class="fa-solid fa-lock" style="margin-right: 5px;"></i>
+                        <span>100% Offline</span>
+                    </span>
+                    <span class="flex items-center">
+                        <i class="fa-brands fa-apple" style="margin-left: 20px;margin-right: 5px;"></i>
+                        <span>Apple Silicon</span>
+                    </span>
+                    <span class="flex items-center">
+                        <i class="fa-solid fa-code" style="margin-left: 20px; margin-right: 5px;"></i>
+                        <span>Open Source</span>
+                    </span>
+                </div>
+            </div>
+
+            <!-- Upload Card -->
+            <div class="bg-white rounded-xl shadow-lg p-8 mb-8">
+            <div id="drop-zone" class="border-2 border-dashed border-gray-300 rounded-lg p-12 text-center hover:border-blue-500 transition cursor-pointer bg-gray-50">
+                <input type="file" id="file-input" class="hidden" accept=".pdf">
+                <div class="text-gray-500">
+                    <i class="fa-solid fa-cloud-arrow-up text-5xl mb-4 text-gray-400"></i>
+                    <p class="text-lg font-medium">Click to upload or drag PDF here</p>
+                    <p class="text-sm mt-2">Maximum file size: 50MB</p>
+                </div>
+            </div>
+
+            <!-- Options -->
+            <div class="mt-6 flex flex-col gap-3 justify-center">
+                <label class="flex items-center space-x-2 cursor-pointer justify-center">
+                    <input type="checkbox" id="math-ocr" checked class="form-checkbox h-5 w-5 text-blue-600 rounded">
+                    <span class="text-gray-700">Enable Math</span>
+                </label>
+                <label class="flex items-center space-x-2 cursor-pointer justify-center">
+                    <input type="checkbox" id="use-llm" class="form-checkbox h-5 w-5 text-blue-600 rounded"style="margin-left: 20px;">
+                    <span class="text-gray-700">Enable LLM Post-Processing <span class="text-sm text-orange-600">(+25s/page)</span></span>
+                </label>
+            </div>
+
+            <div class="mt-6 text-center">
+                <button id="convert-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg shadow-lg transition disabled:opacity-50 disabled:cursor-not-allowed">
+                    Convert to LaTeX
+                </button>
+            </div>
+            </div>
+
+            <!-- Progress Status -->
+            <div id="status-card" class="hidden bg-white rounded-xl shadow-lg p-6 mb-8 border-l-4 border-blue-500">
+            <h3 class="text-lg font-semibold text-gray-800 mb-2">Processing Status</h3>
+            <div class="w-full bg-gray-200 rounded-full h-4 mb-2">
+                <div id="progress-bar" class="bg-blue-600 h-4 rounded-full transition-all duration-500" style="width: 0%"></div>
+            </div>
+            <p id="status-text" class="text-gray-600 text-sm font-mono">Initializing...</p>
+            </div>
+
+            <!-- Result Card -->
+            <div id="result-card" class="hidden bg-green-50 rounded-xl shadow border border-green-200 p-8 text-center">
+            <div class="mb-4">
+                <i class="fa-solid fa-check-circle text-5xl text-green-500"></i>
+            </div>
+            <h2 class="text-2xl font-bold text-gray-800 mb-2">Conversion Complete!</h2>
+            <p class="text-gray-600 mb-6">Your LaTeX files are ready to download.</p>
+            <a id="download-link" href="#" class="inline-block bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-lg shadow transition">
+                <i class="fa-solid fa-download mr-2"></i>Download ZIP
+            </a>
+            <div class="mt-4">
+                 <button onclick="location.reload()" class="text-gray-500 underline text-sm hover:text-gray-700">Convert Another File</button>
+            </div>
+            </div>
+            
+            <!-- Error Card -->
+            <div id="error-card" class="hidden bg-red-50 rounded-xl shadow border border-red-200 p-6 text-center">
+            <i class="fa-solid fa-circle-exclamation text-3xl text-red-500 mb-2"></i>
+            <h3 class="text-lg font-bold text-red-800">Error</h3>
+            <p id="error-text" class="text-red-600 text-sm"></p>
+            <button onclick="location.reload()" class="mt-4 text-red-700 underline text-sm">Try Again</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div class="text-center">
+                <div class="flex justify-center items-center flex-wrap gap-x-3 gap-y-2 mb-4 text-sm">
+                    <a href="https://truyenthong.edu.vn/" target="_blank" class="text-gray-600 hover:text-blue-600 transition">Home</a>
+                    <span class="text-gray-300"style="margin-left: 5px;margin-right: 5px;">|</span>
+                    <a href="https://heytex.truyenthong.edu.vn/" target="_blank" class="text-gray-600 hover:text-blue-600 transition">HeyTeX</a>
+                    <span class="text-gray-300"style="margin-left: 5px;margin-right: 5px;">|</span>
+                    <a href="https://aithink.truyenthong.edu.vn/" target="_blank" class="text-gray-600 hover:text-blue-600 transition">AIThink</a>
+                    <span class="text-gray-300"style="margin-left: 5px;margin-right: 5px;">|</span>
+                    <a href="https://heysym.truyenthong.edu.vn/" target="_blank" class="text-gray-600 hover:text-blue-600 transition">HeySym</a>
+                    <span class="text-gray-300"style="margin-left: 5px;margin-right: 5px;">|</span>
+                    <a href="https://heyphom.truyenthong.edu.vn/" target="_blank" class="text-gray-600 hover:text-blue-600 transition">HeyPhom</a>
+                    <span class="text-gray-300"style="margin-left: 5px;margin-right: 5px;">|</span>
+                    <a href="https://github.com/phucdhh/HeySeen" target="_blank" class="text-gray-600 hover:text-blue-600 transition">GitHub</a>
+                    <span class="text-gray-300"style="margin-left: 5px;margin-right: 5px;">|</span>
+                    <a href="mailto:ndmphuc@hueuni.edu.vn" class="text-gray-600 hover:text-blue-600 transition">Contact</a>
+                </div>
+                <p class="text-sm text-gray-500 mb-2">
+                    Developed by <a href="https://www.ganjingworld.com/@ndmphuc" target="_blank" class="text-blue-600 hover:underline">Nguyễn Đăng Minh Phúc</a>
+                </p>
+                <p class="text-sm text-gray-500">
+                    © 2026 <a href="https://truyenthong.edu.vn/" target="_blank" class="text-blue-600 hover:underline">truyenthong.edu.vn</a> | Built with ❤️ for education
+                </p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Script -->
+    <script>
+        // Use relative path so it works both locally (if proxied) and via Cloudflare Tunnel
+        // Tunnel maps /convert, /status, /download to 5555, and root to 5556
+        const API_URL = ""; 
+        
+        const dropZone = document.getElementById('drop-zone');
+        const fileInput = document.getElementById('file-input');
+        const convertBtn = document.getElementById('convert-btn');
+        const statusCard = document.getElementById('status-card');
+        const progressBar = document.getElementById('progress-bar');
+        const statusText = document.getElementById('status-text');
+        const resultCard = document.getElementById('result-card');
+        const errorCard = document.getElementById('error-card');
+        const downloadLink = document.getElementById('download-link');
+        const errorText = document.getElementById('error-text');
+
+        let selectedFile = null;
+
+        // Make API URL dynamic based on current host if serving from same domain
+        // const API_URL = window.location.origin.replace(":5556", ":5555"); // Poor man's discovery
+
+        dropZone.addEventListener('click', () => fileInput.click());
+
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('border-blue-500', 'bg-blue-50');
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+             dropZone.classList.remove('border-blue-500', 'bg-blue-50');
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('border-blue-500', 'bg-blue-50');
+            if (e.dataTransfer.files.length) {
+                handleFile(e.dataTransfer.files[0]);
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length) {
+                handleFile(e.target.files[0]);
+            }
+        });
+
+        function handleFile(file) {
+            if (file.type !== 'application/pdf') {
+                alert('Please upload a PDF file.');
+                return;
+            }
+            selectedFile = file;
+            dropZone.innerHTML = `
+                <i class="fa-solid fa-file-pdf text-4xl text-red-500 mb-2"></i>
+                <p class="font-bold text-gray-800">${file.name}</p>
+                <p class="text-sm text-gray-500">${(file.size / 1024 / 1024).toFixed(2)} MB</p>
+                <p class="text-xs text-blue-500 mt-2">Click to change</p>
+            `;
+        }
+
+        convertBtn.addEventListener('click', async () => {
+            if (!selectedFile) {
+                alert('Please select a file first.');
+                return;
+            }
+
+            const useMath = document.getElementById('math-ocr').checked;
+            const useLLM = document.getElementById('use-llm').checked;
+            
+            // UI Update
+            convertBtn.disabled = true;
+            convertBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            statusCard.classList.remove('hidden');
+            resultCard.classList.add('hidden');
+            errorCard.classList.add('hidden');
+
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+
+            try {
+                // 1. Create Job
+                const response = await fetch(`${API_URL}/convert?math_ocr=${useMath}&use_llm=${useLLM}`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (!response.ok) throw new Error('Upload failed');
+                
+                const job = await response.json();
+                const jobId = job.job_id;
+                
+                pollStatus(jobId);
+
+            } catch (error) {
+                showError(error.message);
+            }
+        });
+
+        async function pollStatus(jobId) {
+            const interval = setInterval(async () => {
+                try {
+                    const res = await fetch(`${API_URL}/status/${jobId}`);
+                    const data = await res.json();
+                    
+                    // Update UI
+                    const percentage = Math.round(data.progress * 100);
+                    progressBar.style.width = `${percentage}%`;
+                    statusText.textContent = `${data.message} (${percentage}%)`;
+                    
+                    if (data.status === 'completed') {
+                        clearInterval(interval);
+                        showResult(jobId);
+                    } else if (data.status === 'failed') {
+                        clearInterval(interval);
+                        showError(data.message);
+                    }
+                    
+                } catch (e) {
+                    clearInterval(interval);
+                    showError("Connection lost");
+                }
+            }, 1000);
+        }
+
+        function showResult(jobId) {
+            statusCard.classList.add('hidden');
+            resultCard.classList.remove('hidden');
+            downloadLink.href = `${API_URL}/download/${jobId}`;
+        }
+
+        function showError(msg) {
+            statusCard.classList.add('hidden');
+            errorCard.classList.remove('hidden');
+            errorText.textContent = msg;
+            convertBtn.disabled = false;
+            convertBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+        }
+        
+
+    </script>
+</body>
+</html>

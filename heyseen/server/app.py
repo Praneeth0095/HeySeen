@@ -4,6 +4,7 @@ import logging
 import threading
 import zipfile
 import time
+from datetime import datetime
 from pathlib import Path
 from typing import List, Dict, Optional, Any
 from enum import Enum
@@ -19,16 +20,22 @@ from heyseen.core.layout_analyzer import LayoutAnalyzer
 from heyseen.core.content_extractor import ContentExtractor
 from heyseen.core.tex_builder import TeXBuilder
 from heyseen.core.model_manager import ModelManager
+from heyseen.server.user_manager import UserManager
 
 # Configuration
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 UPLOAD_DIR = BASE_DIR / "server_data/uploads"
 OUTPUT_DIR = BASE_DIR / "server_data/outputs"
+USER_DATA_DIR = BASE_DIR / "server_data/users"
 STATIC_DIR = Path(__file__).resolve().parent / "static"
 
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+USER_DATA_DIR.mkdir(parents=True, exist_ok=True)
 STATIC_DIR.mkdir(parents=True, exist_ok=True)
+
+# User Manager
+user_manager = UserManager(USER_DATA_DIR)
 
 # Logging
 logging.basicConfig(level=logging.INFO)
@@ -60,6 +67,26 @@ class JobResponse(BaseModel):
     message: Optional[str] = None
     progress: float = 0.0
     created_at: float
+
+# User Models
+class SignUpRequest(BaseModel):
+    email: str
+    name: str
+    password_hash: str
+
+class LoginRequest(BaseModel):
+    email: str
+    password_hash: str
+
+class UpdateUserRequest(BaseModel):
+    name: Optional[str] = None
+    avatar: Optional[str] = None
+    lastLogin: Optional[int] = None
+    projectCount: Optional[int] = None
+
+class UpdateRoleRequest(BaseModel):
+    new_role: str
+    admin_email: str
 
 def process_pdf_job(job_id: str, file_path: Path, use_math_ocr: bool, dpi: int, use_llm: bool = False):
     """Background task to process PDF."""
@@ -152,6 +179,127 @@ async def startup_event():
 @app.get("/health")
 def health_check():
     return {"status": "ok", "version": "0.1.0"}
+
+# ==================== User Management APIs ====================
+
+@app.post("/api/users/signup")
+def signup(request: SignUpRequest):
+    """Create a new user"""
+    try:
+        user = user_manager.create_user(
+            email=request.email,
+            name=request.name,
+            password_hash=request.password_hash
+        )
+        # Don't return password in response
+        user_response = {k: v for k, v in user.items() if k != "password"}
+        return {"success": True, "user": user_response}
+    except ValueError as e:
+        raise HTTPException(status_code=409, detail=str(e))
+    except Exception as e:
+        logger.error(f"Signup error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to create user")
+
+@app.post("/api/users/login")
+def login(request: LoginRequest):
+    """Login user"""
+    try:
+        # Verify password
+        if not user_manager.verify_password(request.email, request.password_hash):
+            raise HTTPException(status_code=401, detail="Invalid email or password")
+        
+        # Get user
+        user = user_manager.get_user(request.email)
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        # Update last login
+        user_manager.update_user(request.email, {
+            "lastLogin": int(datetime.now().timestamp() * 1000)
+        })
+        
+        # Don't return password
+        user_response = {k: v for k, v in user.items() if k != "password"}
+        return {"success": True, "user": user_response}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Login error: {e}")
+        raise HTTPException(status_code=500, detail="Login failed")
+
+@app.get("/api/users/{email}")
+def get_user(email: str):
+    """Get user by email"""
+    user = user_manager.get_user(email)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Don't return password
+    user_response = {k: v for k, v in user.items() if k != "password"}
+    return {"success": True, "user": user_response}
+
+@app.put("/api/users/{email}")
+def update_user(email: str, request: UpdateUserRequest):
+    """Update user information"""
+    try:
+        updates = {k: v for k, v in request.dict().items() if v is not None}
+        user = user_manager.update_user(email, updates)
+        
+        # Don't return password
+        user_response = {k: v for k, v in user.items() if k != "password"}
+        return {"success": True, "user": user_response}
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.error(f"Update user error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to update user")
+
+@app.get("/api/users")
+def get_all_users(admin_email: str):
+    """Get all users (admin only)"""
+    try:
+        users = user_manager.get_all_users(admin_email)
+        # Don't return passwords
+        users_response = [{k: v for k, v in user.items() if k != "password"} for user in users]
+        return {"success": True, "users": users_response}
+    except PermissionError as e:
+        raise HTTPException(status_code=403, detail=str(e))
+    except Exception as e:
+        logger.error(f"Get all users error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to get users")
+
+@app.put("/api/users/{email}/role")
+def update_user_role(email: str, request: UpdateRoleRequest):
+    """Update user role (admin only)"""
+    try:
+        user = user_manager.update_role(email, request.new_role, request.admin_email)
+        
+        # Don't return password
+        user_response = {k: v for k, v in user.items() if k != "password"}
+        return {"success": True, "user": user_response}
+    except PermissionError as e:
+        raise HTTPException(status_code=403, detail=str(e))
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.error(f"Update role error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to update role")
+
+@app.delete("/api/users/{email}")
+def delete_user(email: str, admin_email: str):
+    """Delete user (admin only)"""
+    try:
+        user_manager.delete_user(email, admin_email)
+        return {"success": True, "message": f"User {email} deleted"}
+    except PermissionError as e:
+        raise HTTPException(status_code=403, detail=str(e))
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.error(f"Delete user error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to delete user")
+
+# ==================== PDF Conversion APIs ====================
 
 @app.post("/convert", response_model=JobResponse)
 async def create_conversion_job(
